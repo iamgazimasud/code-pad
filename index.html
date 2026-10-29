@@ -1,0 +1,2905 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Code Pad</title>
+<meta name="description" content="A code editor built for your phone. Write JavaScript, Python and HTML with suggestions and error checks, and run them, even offline.">
+<meta name="theme-color" content="#181818">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Code Pad">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" crossorigin>
+<style>
+/* Layout: desktop-editor workbench squeezed onto a phone. Title bar with command center, editor tabs, breadcrumbs,
+   code surface (gutter + layered text: decorations under, highlighted text, overlays, textarea), bottom panel,
+   blue status bar, symbol key bar over the phone keyboard. Explorer / Search / Settings slide in with an activity bar. */
+:root {
+  --bg: #1f1f1f; --sidebar: #181818; --chrome: #181818; --tab-active: #1f1f1f; --border: #2b2b2b;
+  --fg: #cccccc; --code-fg: #d4d4d4; --muted: #9d9d9d; --dim: #6e7681; --ln-active: #cccccc;
+  --accent: #0078d4; --accent-fg: #ffffff; --status: #0078d4; --status-fg: #ffffff;
+  --list-active: #04395e; --list-hover: #2a2d2e; --widget: #202020; --widget-border: #454545;
+  --input: #313131; --input-border: #3c3c3c;
+  --sel: rgba(58, 120, 190, .45); --cur-line: rgba(255, 255, 255, .04); --word-hl: rgba(110, 110, 110, .45);
+  --bm-bg: rgba(0, 100, 0, .18); --bm-border: #888888; --find: rgba(234, 92, 0, .33); --find-cur: rgba(158, 106, 3, .85);
+  --error: #f14c4c; --warning: #cca700; --error-bg: rgba(241, 76, 76, .1); --warning-bg: rgba(204, 167, 0, .1);
+  --ghost: rgba(255, 255, 255, .34); --match: #2aaaff; --shadow: rgba(0, 0, 0, .4); --scrim: rgba(0, 0, 0, .45);
+  --key: #2c2c2c; --key-edge: #0c0c0c; --ig: #3a3a3a;
+  --syn-kw: #569cd6; --syn-ctl: #c586c0; --syn-str: #ce9178; --syn-num: #b5cea8; --syn-com: #6a9955; --syn-fn: #dcdcaa;
+  --syn-type: #4ec9b0; --syn-var: #9cdcfe; --syn-lit: #569cd6; --syn-tag: #569cd6; --syn-attr: #9cdcfe; --syn-pun: #808080;
+  --syn-sel: #d7ba7d; --b0: #ffd700; --b1: #da70d6; --b2: #179fff;
+  --fi-js: #cbcb41; --fi-py: #4b9ce2; --fi-html: #e37933; --fi-css: #519aba; --fi-c: #a074c4; --fi-java: #cc3e44; --fi-txt: #9d9d9d;
+  --si-fn: #b180d7; --si-var: #75beff; --si-tag: #ee9d28;
+  --font-code: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fs: 15px; --lhp: 23px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ffffff; --sidebar: #f8f8f8; --chrome: #f8f8f8; --tab-active: #ffffff; --border: #e5e5e5;
+    --fg: #3b3b3b; --code-fg: #1f1f1f; --muted: #6f6f6f; --dim: #8b949e; --ln-active: #171184;
+    --accent: #005fb8; --accent-fg: #ffffff; --status: #005fb8; --status-fg: #ffffff;
+    --list-active: #d6ebff; --list-hover: #f0f0f0; --widget: #f8f8f8; --widget-border: #c8c8c8;
+    --input: #ffffff; --input-border: #cecece;
+    --sel: rgba(0, 120, 215, .22); --cur-line: rgba(0, 0, 0, .035); --word-hl: rgba(87, 87, 87, .2);
+    --bm-bg: rgba(0, 100, 0, .1); --bm-border: #b9b9b9; --find: rgba(234, 92, 0, .25); --find-cur: rgba(168, 172, 148, .9);
+    --error: #e51400; --warning: #bf8803; --error-bg: rgba(229, 20, 0, .07); --warning-bg: rgba(191, 136, 3, .08);
+    --ghost: rgba(0, 0, 0, .36); --match: #0066bf; --shadow: rgba(0, 0, 0, .16); --scrim: rgba(0, 0, 0, .25);
+    --key: #ffffff; --key-edge: #c5c5c5; --ig: #d9d9d9;
+    --syn-kw: #0000ff; --syn-ctl: #af00db; --syn-str: #a31515; --syn-num: #098658; --syn-com: #008000; --syn-fn: #795e26;
+    --syn-type: #267f99; --syn-var: #001080; --syn-lit: #0000ff; --syn-tag: #800000; --syn-attr: #e50000; --syn-pun: #800000;
+    --syn-sel: #800000; --b0: #0431fa; --b1: #319331; --b2: #7b3814;
+    --fi-js: #a09400; --fi-py: #2f6fad; --fi-html: #c2541b; --fi-css: #2a6f91; --fi-c: #7a4ea0; --fi-java: #b0262c; --fi-txt: #6f6f6f;
+    --si-fn: #652d90; --si-var: #007acc; --si-tag: #d67e00;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #ffffff; --sidebar: #f8f8f8; --chrome: #f8f8f8; --tab-active: #ffffff; --border: #e5e5e5;
+  --fg: #3b3b3b; --code-fg: #1f1f1f; --muted: #6f6f6f; --dim: #8b949e; --ln-active: #171184;
+  --accent: #005fb8; --accent-fg: #ffffff; --status: #005fb8; --status-fg: #ffffff;
+  --list-active: #d6ebff; --list-hover: #f0f0f0; --widget: #f8f8f8; --widget-border: #c8c8c8;
+  --input: #ffffff; --input-border: #cecece;
+  --sel: rgba(0, 120, 215, .22); --cur-line: rgba(0, 0, 0, .035); --word-hl: rgba(87, 87, 87, .2);
+  --bm-bg: rgba(0, 100, 0, .1); --bm-border: #b9b9b9; --find: rgba(234, 92, 0, .25); --find-cur: rgba(168, 172, 148, .9);
+  --error: #e51400; --warning: #bf8803; --error-bg: rgba(229, 20, 0, .07); --warning-bg: rgba(191, 136, 3, .08);
+  --ghost: rgba(0, 0, 0, .36); --match: #0066bf; --shadow: rgba(0, 0, 0, .16); --scrim: rgba(0, 0, 0, .25);
+  --key: #ffffff; --key-edge: #c5c5c5; --ig: #d9d9d9;
+  --syn-kw: #0000ff; --syn-ctl: #af00db; --syn-str: #a31515; --syn-num: #098658; --syn-com: #008000; --syn-fn: #795e26;
+  --syn-type: #267f99; --syn-var: #001080; --syn-lit: #0000ff; --syn-tag: #800000; --syn-attr: #e50000; --syn-pun: #800000;
+  --syn-sel: #800000; --b0: #0431fa; --b1: #319331; --b2: #7b3814;
+  --fi-js: #a09400; --fi-py: #2f6fad; --fi-html: #c2541b; --fi-css: #2a6f91; --fi-c: #7a4ea0; --fi-java: #b0262c; --fi-txt: #6f6f6f;
+  --si-fn: #652d90; --si-var: #007acc; --si-tag: #d67e00;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #1f1f1f; --sidebar: #181818; --chrome: #181818; --tab-active: #1f1f1f; --border: #2b2b2b;
+  --fg: #cccccc; --code-fg: #d4d4d4; --muted: #9d9d9d; --dim: #6e7681; --ln-active: #cccccc;
+  --accent: #0078d4; --accent-fg: #ffffff; --status: #0078d4; --status-fg: #ffffff;
+  --list-active: #04395e; --list-hover: #2a2d2e; --widget: #202020; --widget-border: #454545;
+  --input: #313131; --input-border: #3c3c3c;
+  --sel: rgba(58, 120, 190, .45); --cur-line: rgba(255, 255, 255, .04); --word-hl: rgba(110, 110, 110, .45);
+  --bm-bg: rgba(0, 100, 0, .18); --bm-border: #888888; --find: rgba(234, 92, 0, .33); --find-cur: rgba(158, 106, 3, .85);
+  --error: #f14c4c; --warning: #cca700; --error-bg: rgba(241, 76, 76, .1); --warning-bg: rgba(204, 167, 0, .1);
+  --ghost: rgba(255, 255, 255, .34); --match: #2aaaff; --shadow: rgba(0, 0, 0, .4); --scrim: rgba(0, 0, 0, .45);
+  --key: #2c2c2c; --key-edge: #0c0c0c; --ig: #3a3a3a;
+  --syn-kw: #569cd6; --syn-ctl: #c586c0; --syn-str: #ce9178; --syn-num: #b5cea8; --syn-com: #6a9955; --syn-fn: #dcdcaa;
+  --syn-type: #4ec9b0; --syn-var: #9cdcfe; --syn-lit: #569cd6; --syn-tag: #569cd6; --syn-attr: #9cdcfe; --syn-pun: #808080;
+  --syn-sel: #d7ba7d; --b0: #ffd700; --b1: #da70d6; --b2: #179fff;
+  --fi-js: #cbcb41; --fi-py: #4b9ce2; --fi-html: #e37933; --fi-css: #519aba; --fi-c: #a074c4; --fi-java: #cc3e44; --fi-txt: #9d9d9d;
+  --si-fn: #b180d7; --si-var: #75beff; --si-tag: #ee9d28;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+body { background: var(--bg); color: var(--fg); font: 13px/1.4 var(--font-ui); -webkit-tap-highlight-color: transparent; }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+svg { display: block; }
+kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widget-border); border-bottom-width: 2px; border-radius: 3px; background: var(--bg); color: var(--fg); }
+
+.app {
+  position: fixed; left: 0; right: 0;
+  top: var(--vv-top, 0px); height: var(--vv-h, 100%);
+  display: flex; flex-direction: column; background: var(--bg);
+}
+.ibtn {
+  flex: none; width: 34px; height: 34px; display: grid; place-items: center;
+  border: 0; border-radius: 5px; background: transparent; color: var(--fg); padding: 0;
+}
+.ibtn svg { width: 18px; height: 18px; }
+.ibtn:hover, .ibtn:active { background: var(--list-hover); }
+
+/* Title bar with command center */
+.titlebar {
+  flex: none; display: flex; align-items: center; gap: 6px;
+  padding: calc(env(safe-area-inset-top, 0px) + 4px) max(6px, env(safe-area-inset-right, 0px)) 4px max(6px, env(safe-area-inset-left, 0px));
+  background: var(--chrome); border-bottom: 1px solid var(--border);
+}
+.cmd-center {
+  flex: 1; min-width: 0; height: 28px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--input-border); border-radius: 6px; background: var(--input); color: var(--muted); font-size: 12.5px;
+  max-width: 460px; margin: 0 auto;
+}
+.cmd-center svg { width: 14px; height: 14px; flex: none; }
+.cmd-center span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Editor tabs */
+.tabbar { flex: none; display: flex; align-items: stretch; height: 36px; background: var(--chrome); border-bottom: 1px solid var(--border); }
+.tabs { flex: 1; min-width: 0; display: flex; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: none; position: relative; display: flex; align-items: center; gap: 6px; padding: 0 4px 0 10px; max-width: 200px;
+  border: 0; border-right: 1px solid var(--border); background: var(--chrome); color: var(--muted); font-size: 13px; cursor: pointer;
+}
+.tab[aria-selected="true"] { background: var(--tab-active); color: var(--fg); }
+.tab[aria-selected="true"]::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--accent); }
+.tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--tab-active); }
+.tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab-x { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 4px; color: inherit; visibility: hidden; }
+.tab-x svg { width: 14px; height: 14px; }
+.tab[aria-selected="true"] .tab-x, .tab:hover .tab-x { visibility: visible; }
+.tab-x:hover { background: var(--list-hover); }
+.tab-actions { flex: none; display: flex; align-items: center; gap: 2px; padding: 0 max(4px, env(safe-area-inset-right, 0px)) 0 4px; }
+.run-btn svg { width: 17px; height: 17px; }
+
+.fi { flex: none; width: 16px; text-align: center; font: 700 9.5px/1 var(--font-code); letter-spacing: -.04em; color: var(--fi-c); }
+.fi-javascript { color: var(--fi-js); } .fi-python { color: var(--fi-py); } .fi-html { color: var(--fi-html); }
+.fi-css { color: var(--fi-css); } .fi-java { color: var(--fi-java); } .fi-text { color: var(--fi-txt); }
+
+/* Breadcrumbs */
+.crumbs {
+  flex: none; display: flex; align-items: center; gap: 4px; height: 24px; padding: 0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+  background: var(--bg); color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden;
+}
+.crumbs .sep { opacity: .7; }
+.crumbs button { border: 0; background: none; padding: 0 2px; display: inline-flex; align-items: center; gap: 5px; color: inherit; }
+.crumbs .sym { color: var(--si-fn); font: 700 11px var(--font-code); }
+.app.compact .titlebar, .app.compact .crumbs { display: none; }
+
+/* Editor surface */
+.editor { flex: 1; min-height: 0; display: flex; position: relative; background: var(--bg); touch-action: pan-x pan-y; }
+.gutter, #hl, #code, .ghost {
+  font-family: var(--font-code); font-size: var(--fs); line-height: var(--lhp);
+  font-variant-ligatures: none; tab-size: 4; letter-spacing: 0;
+}
+.gutter {
+  flex: none; position: relative; width: calc(var(--gw, 2) * 1ch + 30px);
+  padding: 12px 16px 40vh 4px; overflow: hidden; white-space: pre; text-align: right;
+  color: var(--dim); user-select: none; -webkit-user-select: none; font-variant-numeric: tabular-nums;
+}
+#lnCur { position: absolute; left: 0; right: 0; top: 0; padding-right: 16px; background: var(--bg); color: var(--ln-active); }
+.code-wrap { position: relative; flex: 1; min-width: 0; overflow: hidden; }
+.layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.layer-in { position: absolute; left: 0; top: 0; will-change: transform; }
+.layer-in > div { position: absolute; }
+#hl, #code {
+  position: absolute; inset: 0; margin: 0; border: 0;
+  padding: 12px 14px 40vh 12px; white-space: pre; overflow: auto;
+}
+#hl { overflow: hidden; color: var(--code-fg); pointer-events: none; }
+#hl code { font: inherit; }
+#code {
+  background: transparent; color: transparent; -webkit-text-fill-color: transparent;
+  caret-color: var(--ln-active); resize: none; outline: none; overscroll-behavior: contain;
+}
+#code::selection { background: var(--sel); color: transparent; -webkit-text-fill-color: transparent; }
+
+.d-line { left: 0; width: 100000px; background: var(--cur-line); }
+.d-occ { background: var(--word-hl); border-radius: 2px; }
+.d-bm { background: var(--bm-bg); outline: 1px solid var(--bm-border); outline-offset: -1px; }
+.d-find { background: var(--find); border-radius: 2px; }
+.d-find.cur { background: var(--find-cur); }
+.d-lens-bg { background: var(--error-bg); }
+.d-lens-bg.warning { background: var(--warning-bg); }
+.d-sq {
+  background: var(--error);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='4'%3E%3Cpath d='M0 3l1.5-2 1.5 2 1.5-2 1.5 2' fill='none' stroke='black'/%3E%3C/svg%3E") repeat-x;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='4'%3E%3Cpath d='M0 3l1.5-2 1.5 2 1.5-2 1.5 2' fill='none' stroke='black'/%3E%3C/svg%3E") repeat-x;
+}
+.d-sq.warning { background: var(--warning); }
+.d-lens { white-space: pre; font: italic calc(var(--fs) * .86) var(--font-ui); line-height: var(--lhp); color: var(--error); }
+.d-lens.warning { color: var(--warning); }
+.ghost { white-space: pre; color: var(--ghost); }
+
+.t-kw { color: var(--syn-kw); } .t-ctl { color: var(--syn-ctl); } .t-str { color: var(--syn-str); }
+.t-num { color: var(--syn-num); } .t-com { color: var(--syn-com); } .t-fn { color: var(--syn-fn); }
+.t-type { color: var(--syn-type); } .t-var { color: var(--syn-var); } .t-lit { color: var(--syn-lit); }
+.t-tag { color: var(--syn-tag); } .t-attr { color: var(--syn-attr); } .t-pun { color: var(--syn-pun); }
+.t-sel { color: var(--syn-sel); } .t-prop { color: var(--syn-var); }
+.b0 { color: var(--b0); } .b1 { color: var(--b1); } .b2 { color: var(--b2); }
+.ig { display: inline-block; height: var(--lhp); vertical-align: top; box-shadow: inset 1px 0 0 var(--ig); }
+
+/* Suggest widget */
+.suggest {
+  position: absolute; z-index: 6; top: 0; left: 0;
+  width: max-content; min-width: 240px; max-width: min(400px, calc(100% - 8px));
+  display: flex; flex-direction: column; background: var(--widget); border: 1px solid var(--widget-border);
+  border-radius: 4px; box-shadow: 0 4px 16px var(--shadow); overflow: hidden;
+}
+.sg-list { list-style: none; margin: 0; padding: 0; max-height: 216px; overflow-y: auto; overscroll-behavior: contain; }
+.sg-item { display: flex; align-items: center; gap: 7px; height: 24px; padding: 0 8px 0 5px; cursor: pointer; touch-action: manipulation; font: 13.5px var(--font-code); }
+.sg-item[aria-selected="true"] { background: var(--list-active); }
+.sg-ico { flex: none; width: 16px; height: 16px; color: var(--fg); }
+.sg-ico svg { width: 16px; height: 16px; }
+.si-F, .si-M { color: var(--si-fn); } .si-W, .si-A, .si-P { color: var(--si-var); } .si-T, .si-V { color: var(--si-tag); }
+.sg-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-label b { color: var(--match); font-weight: 700; }
+.sg-detail { margin-left: auto; padding-left: 12px; flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font: 12px var(--font-ui); }
+.sg-foot { display: none; padding: 4px 8px; border-top: 1px solid var(--widget-border); color: var(--muted); font-size: 11.5px; }
+@media (hover: hover) and (pointer: fine) { .sg-foot { display: block; } }
+@media (pointer: coarse) { .sg-item { height: 34px; } .sg-list { max-height: 238px; } }
+
+/* Find widget */
+.find {
+  position: absolute; z-index: 7; top: 0; right: 12px; width: min(440px, calc(100% - 16px));
+  display: grid; gap: 4px; padding: 5px 6px; background: var(--widget); border: 1px solid var(--widget-border); border-top: 0;
+  border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px var(--shadow);
+}
+.find-row { display: flex; align-items: center; gap: 3px; }
+.find-row input {
+  flex: 1; min-width: 0; height: 28px; padding: 0 6px; border: 1px solid var(--input-border); border-radius: 3px;
+  background: var(--input); font-size: 13px; outline: none;
+}
+.find-row input:focus { border-color: var(--accent); }
+.find .ibtn { width: 28px; height: 28px; }
+.find .ibtn svg { width: 16px; height: 16px; }
+.find-count { flex: none; min-width: 62px; font-size: 12px; color: var(--muted); text-align: center; white-space: nowrap; }
+.find-count.none { color: var(--error); }
+.find-pad { flex: none; width: 28px; }
+.find-rep { display: none; }
+.find.rep .find-rep { display: flex; }
+.find .tbtn { height: 28px; padding: 0 8px; border: 1px solid var(--input-border); border-radius: 3px; background: var(--input); font-size: 12px; white-space: nowrap; }
+#findToggle svg { transition: transform .12s; }
+.find.rep #findToggle svg { transform: rotate(90deg); }
+
+/* Bottom panel */
+.panel {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 46%; z-index: 8;
+  display: flex; flex-direction: column; background: var(--bg); border-top: 1px solid var(--border);
+  box-shadow: 0 -6px 18px var(--shadow);
+}
+.panel.tall { height: 92%; }
+.panel-head { flex: none; display: flex; align-items: center; height: 35px; padding: 0 4px 0 10px; }
+.ptabs { flex: 1; min-width: 0; display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; height: 100%; }
+.ptab {
+  flex: none; height: 100%; border: 0; background: none; padding: 0 2px; color: var(--muted);
+  font-size: 11px; letter-spacing: .04em; text-transform: uppercase; display: flex; align-items: center; gap: 6px;
+  border-bottom: 1px solid transparent;
+}
+.ptab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--fg); }
+.badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--list-hover); color: var(--fg); font-size: 11px; display: grid; place-items: center; letter-spacing: 0; }
+.pbody { flex: 1; min-height: 0; display: flex; }
+.term {
+  flex: 1; min-width: 0; margin: 0; padding: 6px 14px 16px; overflow: auto;
+  font: 13px/1.5 var(--font-code); white-space: pre-wrap; word-break: break-word; color: var(--code-fg);
+}
+.term .warn { color: var(--warning); }
+.term .error { color: var(--error); }
+.term .meta { color: var(--muted); }
+.term .ln:empty { min-height: 1.5em; }
+.term .pr { color: var(--syn-type); }
+.term .ar { color: var(--syn-ctl); }
+.term .blk { display: inline-block; width: .6em; height: 1.1em; vertical-align: -3px; background: var(--fg); animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .term .blk { animation: none; } #findToggle svg { transition: none; } }
+.problems { flex: 1; min-width: 0; overflow: auto; padding: 4px 0; }
+.prob {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 30px; padding: 4px 14px; border: 0; background: none;
+  text-align: left; font-size: 13px;
+}
+.prob:hover, .prob:active { background: var(--list-hover); }
+.prob svg { width: 16px; height: 16px; flex: none; color: var(--error); }
+.prob.warning svg { color: var(--warning); }
+.prob .where { color: var(--muted); white-space: nowrap; margin-left: auto; padding-left: 8px; }
+.empty-note { padding: 10px 14px; color: var(--muted); font-size: 13px; }
+#preview { flex: 1; min-width: 0; border: 0; background: #fff; }
+
+/* Status bar */
+.statusbar {
+  flex: none; display: flex; align-items: center; height: 24px; background: var(--status); color: var(--status-fg);
+  padding: 0 max(4px, env(safe-area-inset-right, 0px)) 0 max(4px, env(safe-area-inset-left, 0px)); font-size: 12px; white-space: nowrap; overflow: hidden;
+}
+.statusbar button, .statusbar span { height: 100%; border: 0; background: none; color: inherit; padding: 0 7px; display: flex; align-items: center; gap: 4px; }
+.statusbar button:hover, .statusbar button:active { background: rgba(255, 255, 255, .12); }
+.statusbar svg { width: 14px; height: 14px; }
+.sb-gap { flex: 1; }
+@media (max-width: 460px) { .sb-wide { display: none !important; } }
+
+/* Key bar over the phone keyboard: editing keys and the cursor trackpad on top, the language's symbols below */
+.keybar {
+  flex: none; display: flex; flex-direction: column; gap: 5px;
+  padding: 5px max(6px, env(safe-area-inset-right, 0px)) 5px max(6px, env(safe-area-inset-left, 0px));
+  background: var(--sidebar); border-top: 1px solid var(--border);
+}
+.app:not(.kb) .keybar { padding-bottom: max(5px, env(safe-area-inset-bottom, 0px)); }
+.krow { display: flex; align-items: center; gap: 5px; }
+.krow-sym { overflow-x: auto; scrollbar-width: none; }
+.krow-sym::-webkit-scrollbar { display: none; }
+.key {
+  flex: none; min-width: 36px; height: 36px; padding: 0 8px; border: 0; border-radius: 5px;
+  background: var(--key); box-shadow: 0 1px 0 var(--key-edge); color: var(--code-fg);
+  font: 500 16px var(--font-code); touch-action: manipulation;
+}
+.key.fx { font: 600 12.5px var(--font-ui); color: var(--match); }
+.krow-nav .key { flex: 1 1 36px; min-width: 30px; max-width: 52px; padding: 0; display: grid; place-items: center; touch-action: none; }
+.krow-nav .key svg { width: 18px; height: 18px; }
+.krow-nav .key.pad {
+  flex: 3 1 72px; max-width: 240px; color: var(--muted);
+  background-image: radial-gradient(circle, rgba(128, 128, 128, .34) 1px, transparent 1.4px); background-size: 7px 7px; background-position: center;
+}
+.key:active, .key.on { background-color: var(--list-active); }
+.key.pad.on { box-shadow: inset 0 0 0 1px var(--accent); color: var(--fg); }
+@media (hover: hover) and (pointer: fine) { .keybar { display: none; } }
+
+/* Drawer: activity bar + side bar */
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 20; }
+.drawer {
+  position: fixed; top: 0; bottom: 0; left: 0; z-index: 21; width: min(92vw, 380px); display: flex;
+  background: var(--sidebar); border-right: 1px solid var(--border); box-shadow: 4px 0 18px var(--shadow);
+  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+.activity { flex: none; width: 48px; display: flex; flex-direction: column; align-items: center; padding-top: 6px; background: var(--chrome); border-right: 1px solid var(--border); }
+.act { width: 48px; height: 48px; display: grid; place-items: center; border: 0; background: none; color: var(--dim); position: relative; }
+.act svg { width: 24px; height: 24px; }
+.act[aria-selected="true"] { color: var(--fg); }
+.act[aria-selected="true"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--accent); }
+.act-gap { flex: 1; }
+.side { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.side-head { flex: none; display: flex; align-items: center; justify-content: space-between; height: 35px; padding: 0 4px 0 18px; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--fg); }
+.pane { flex: 1; min-height: 0; overflow-y: auto; }
+.sec-head { display: flex; align-items: center; gap: 2px; height: 26px; padding: 0 4px 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--fg); }
+.sec-head > span:first-child svg { width: 16px; height: 16px; }
+.sec-head .grow { flex: 1; }
+.sec-head .ibtn { width: 26px; height: 26px; }
+.sec-head .ibtn svg { width: 16px; height: 16px; }
+.files { list-style: none; margin: 0; padding: 0; }
+.file { display: flex; align-items: center; height: 26px; padding: 0 4px 0 22px; gap: 6px; font-size: 13px; }
+.file.cur { background: var(--list-active); }
+.file-open { flex: 1; min-width: 0; height: 100%; border: 0; background: none; padding: 0; display: flex; align-items: center; gap: 6px; text-align: left; }
+.file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-meta { color: var(--muted); font-size: 11.5px; margin-left: auto; padding-left: 8px; white-space: nowrap; }
+.file .ibtn { width: 26px; height: 26px; color: var(--muted); visibility: hidden; }
+.file .ibtn svg { width: 15px; height: 15px; }
+.file.cur .ibtn, .file:hover .ibtn { visibility: visible; }
+.file .ibtn.confirm { visibility: visible; width: auto; padding: 0 8px; background: var(--error); color: #ffffff; font-size: 12px; }
+@media (pointer: coarse) { .file { height: 38px; } }
+.side-input { margin: 4px 12px 8px 18px; }
+.side-input input {
+  width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--input-border); border-radius: 3px; background: var(--input); outline: none; font-size: 13px;
+}
+.side-input input:focus { border-color: var(--accent); }
+.sr-file { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 12px 0 8px; font-size: 13px; }
+.sr-file > svg { width: 14px; height: 14px; }
+.sr-line { display: block; width: 100%; border: 0; background: none; text-align: left; padding: 4px 12px 4px 34px; font: 12.5px var(--font-code); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-line mark { background: var(--find); color: var(--fg); border-radius: 2px; }
+.sr-line:hover, .sr-line:active { background: var(--list-hover); }
+.set { display: grid; gap: 6px; padding: 10px 14px 12px 18px; }
+.set-title { font-weight: 600; font-size: 13px; }
+.set-title span { color: var(--muted); font-weight: 400; }
+.set-desc { color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.set-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chip { height: 28px; padding: 0 10px; border: 1px solid var(--input-border); border-radius: 3px; background: var(--input); font-size: 12.5px; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.check { display: flex; align-items: flex-start; gap: 8px; border: 0; background: none; padding: 0; text-align: left; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.check .box { flex: none; width: 18px; height: 18px; border: 1px solid var(--input-border); border-radius: 3px; background: var(--input); display: grid; place-items: center; color: var(--accent-fg); }
+.check .box svg { width: 14px; height: 14px; visibility: hidden; }
+.check[aria-checked="true"] .box { background: var(--accent); border-color: var(--accent); }
+.check[aria-checked="true"] .box svg { visibility: visible; }
+.stepper { display: flex; align-items: center; gap: 4px; }
+.stepper button { width: 30px; height: 28px; border: 1px solid var(--input-border); border-radius: 3px; background: var(--input); font-size: 16px; }
+.stepper output { min-width: 3ch; text-align: center; font-family: var(--font-code); }
+.note { margin: 0; padding: 12px 14px 20px 18px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+/* Command palette */
+.pal-scrim { position: fixed; inset: 0; z-index: 30; }
+.palette {
+  position: fixed; z-index: 31; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 6px); transform: translateX(-50%);
+  width: min(600px, calc(100vw - 16px)); display: flex; flex-direction: column;
+  background: var(--widget); border: 1px solid var(--widget-border); border-radius: 6px; box-shadow: 0 8px 28px var(--shadow); overflow: hidden;
+}
+.pal-in { padding: 6px; }
+.pal-in input {
+  width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--accent); border-radius: 3px; background: var(--input); outline: none; font-size: 13.5px;
+}
+.pal-hint { padding: 2px 10px 6px; color: var(--muted); font-size: 12px; list-style: none; }
+.pal-list { list-style: none; margin: 0; padding: 0 0 6px; max-height: min(52vh, 420px); overflow-y: auto; }
+.pal-item { display: flex; align-items: center; gap: 8px; min-height: 26px; padding: 3px 10px; cursor: pointer; font-size: 13px; }
+.pal-item[aria-selected="true"] { background: var(--list-active); }
+.pal-item .lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal-item .lbl b { color: var(--match); }
+.pal-item .det { margin-left: auto; padding-left: 10px; color: var(--muted); font-size: 12px; white-space: nowrap; display: flex; gap: 3px; }
+@media (pointer: coarse) { .pal-item { min-height: 38px; } }
+
+/* Notifications */
+.toast {
+  position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); bottom: var(--toast-b, 34px); z-index: 40;
+  display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 20px);
+  padding: 9px 14px; background: var(--widget); border: 1px solid var(--widget-border); border-radius: 4px; box-shadow: 0 4px 16px var(--shadow);
+  font-size: 13px; pointer-events: none;
+}
+.toast svg { width: 16px; height: 16px; color: var(--match); flex: none; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="titlebar">
+    <button class="ibtn" id="menuBtn" aria-label="Explorer" data-icon="menu"></button>
+    <button class="cmd-center" id="cmdCenter" aria-label="Search files and commands" data-icon="search"><span>code-pad</span></button>
+    <button class="ibtn" id="layoutBtn" aria-label="Toggle panel" data-icon="panel"></button>
+  </header>
+
+  <div class="tabbar">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Open editors"></div>
+    <div class="tab-actions">
+      <button class="ibtn run-btn" id="runBtn" aria-label="Run code" data-icon="play"></button>
+      <button class="ibtn" id="moreBtn" aria-label="Command palette" data-icon="more"></button>
+    </div>
+  </div>
+  <nav class="crumbs" id="crumbs" aria-label="Breadcrumbs"></nav>
+
+  <main class="editor">
+    <div class="gutter" id="gutter" aria-hidden="true"><div id="lnText">1</div><div id="lnCur">1</div></div>
+    <div class="code-wrap" id="codeWrap">
+      <div class="layer" aria-hidden="true"><div class="layer-in" id="under"></div></div>
+      <pre id="hl" aria-hidden="true"><code></code></pre>
+      <div class="layer" aria-hidden="true"><div class="layer-in" id="over"></div></div>
+      <textarea id="code" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="Code" aria-autocomplete="list" aria-controls="sgList"></textarea>
+
+      <div class="suggest" id="suggest" hidden>
+        <ul class="sg-list" id="sgList" role="listbox" aria-label="Suggestions"></ul>
+        <div class="sg-foot"><kbd>Tab</kbd> or <kbd>Enter</kbd> to insert · <kbd>Esc</kbd> to close</div>
+      </div>
+
+      <div class="find" id="find" hidden role="search">
+        <div class="find-row">
+          <button class="ibtn" id="findToggle" aria-label="Toggle replace" data-icon="chevR"></button>
+          <input id="findIn" placeholder="Find" aria-label="Find" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <span class="find-count" id="findCount"></span>
+          <button class="ibtn" id="findPrev" aria-label="Previous match" data-icon="up"></button>
+          <button class="ibtn" id="findNext" aria-label="Next match" data-icon="down"></button>
+          <button class="ibtn" id="findClose" aria-label="Close find" data-icon="close"></button>
+        </div>
+        <div class="find-row find-rep">
+          <span class="find-pad"></span>
+          <input id="replIn" placeholder="Replace" aria-label="Replace" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <button class="tbtn" id="replOne">Replace</button>
+          <button class="tbtn" id="replAll">All</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="panel" id="panel" hidden>
+      <div class="panel-head">
+        <div class="ptabs" role="tablist">
+          <button class="ptab" data-ptab="problems" role="tab">Problems <span class="badge" id="probBadge">0</span></button>
+          <button class="ptab" data-ptab="terminal" role="tab">Terminal</button>
+          <button class="ptab" data-ptab="preview" role="tab" id="ptabPreview">Preview</button>
+        </div>
+        <button class="ibtn" id="panelClear" aria-label="Clear terminal" data-icon="clear"></button>
+        <button class="ibtn" id="panelSize" aria-label="Maximize panel" data-icon="up"></button>
+        <button class="ibtn" id="panelClose" aria-label="Close panel" data-icon="close"></button>
+      </div>
+      <div class="pbody">
+        <div class="problems" id="problems"></div>
+        <div class="term" id="console" role="log"></div>
+        <iframe id="preview" title="HTML preview" sandbox="allow-scripts allow-modals" hidden></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="statusbar" id="statusbar">
+    <button id="sbProblems" aria-label="Show problems"></button>
+    <span class="sb-gap"></span>
+    <button id="sbPos" aria-label="Go to line">Ln 1, Col 1</button>
+    <button id="sbIndent" aria-label="Change indentation">Spaces: 2</button>
+    <span class="sb-wide">UTF-8</span>
+    <span class="sb-wide">LF</span>
+    <button id="sbLang" aria-label="Change language">JavaScript</button>
+  </footer>
+
+  <nav class="keybar" id="keybar" aria-label="Key bar">
+    <div class="krow krow-nav" id="keyNav"></div>
+    <div class="krow krow-sym" id="keySym"></div>
+  </nav>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="Side bar">
+  <nav class="activity" role="tablist" aria-label="Views">
+    <button class="act" data-pane="explorer" aria-label="Explorer" data-icon="files"></button>
+    <button class="act" data-pane="search" aria-label="Search" data-icon="search"></button>
+    <span class="act-gap"></span>
+    <button class="act" data-pane="settings" aria-label="Settings" data-icon="gear"></button>
+  </nav>
+  <div class="side">
+    <div class="side-head"><span id="sideTitle">Explorer</span><button class="ibtn" id="drawerClose" aria-label="Close side bar" data-icon="close"></button></div>
+
+    <div class="pane" id="pane-explorer">
+      <div class="sec-head"><span data-icon="chevD"></span><span class="grow">code-pad</span>
+        <button class="ibtn" id="newFileBtn" aria-label="New file" data-icon="newFile"></button>
+      </div>
+      <ul class="files" id="fileList"></ul>
+    </div>
+
+    <div class="pane" id="pane-search" hidden>
+      <div class="side-input"><input id="searchIn" placeholder="Search all files" aria-label="Search all files" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+      <div id="searchOut"></div>
+    </div>
+
+    <div class="pane" id="pane-settings" hidden>
+      <div class="set"><div class="set-title"><span>Editor: </span>Font Size</div><div class="set-desc">Size of the code text in pixels. You can also pinch the editor with two fingers.</div>
+        <div class="stepper"><button id="fsDown" aria-label="Smaller text">−</button><output id="fsVal">15</output><button id="fsUp" aria-label="Larger text">+</button></div></div>
+      <div class="set"><div class="set-title"><span>Editor: </span>Tab Size</div><div class="set-desc">Spaces per indent. Auto follows the language: 2 for JavaScript, HTML and CSS, 4 for Python, C and Java.</div>
+        <div class="set-row" id="indentChips"></div></div>
+      <div class="set"><div class="set-title"><span>Editor: </span>Quick Suggestions</div>
+        <button class="check" role="checkbox" data-opt="suggest"><span class="box" data-icon="check"></span>Show the suggestion list while typing.</button></div>
+      <div class="set"><div class="set-title"><span>Editor: </span>Inline Suggest</div>
+        <button class="check" role="checkbox" data-opt="ghost"><span class="box" data-icon="check"></span>Show the top suggestion as grey text after the cursor. Tab accepts it.</button></div>
+      <div class="set"><div class="set-title"><span>Editor: </span>Auto Closing Brackets</div>
+        <button class="check" role="checkbox" data-opt="autoClose"><span class="box" data-icon="check"></span>Close brackets, quotes and HTML tags as you type them.</button></div>
+      <div class="set"><div class="set-title"><span>Editor: </span>Bracket Pair Colorization</div>
+        <button class="check" role="checkbox" data-opt="bracketColors"><span class="box" data-icon="check"></span>Color matching brackets by nesting depth.</button></div>
+      <div class="set"><div class="set-title"><span>Editor: </span>Inline Errors</div>
+        <button class="check" role="checkbox" data-opt="lens"><span class="box" data-icon="check"></span>Print error messages at the end of the line that has the problem.</button></div>
+      <div class="set"><div class="set-title"><span>Key Bar: </span>Haptics</div>
+        <button class="check" role="checkbox" data-opt="haptics"><span class="box" data-icon="check"></span>Vibrate briefly when you tap a key in the key bar. Works on Android, and on iPhone with iOS 18 or later.</button></div>
+      <div class="set"><div class="set-title"><span>Workbench: </span>Color Theme</div>
+        <div class="set-row" id="themeChips"></div></div>
+      <p class="note">Files save automatically in this browser on this device. Run executes JavaScript and Python in the terminal and shows HTML in a live preview. Python downloads the first time you run it (about 10 MB), then works offline. C, C++ and Java get suggestions, highlighting and error checks, but the browser can't execute them.</p>
+    </div>
+  </div>
+</aside>
+
+<div class="pal-scrim" id="palScrim" hidden></div>
+<div class="palette" id="palette" hidden role="dialog" aria-label="Command palette">
+  <div class="pal-in"><input id="palIn" aria-label="Type a command or file name" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+  <div class="pal-hint" id="palHint" hidden></div>
+  <ul class="pal-list" id="palList" role="listbox"></ul>
+</div>
+
+<div class="toast" id="toast" hidden role="status"><span data-icon="info"></span><span id="toastText"></span></div>
+
+<script>
+(() => {
+  'use strict';
+  const KEY = 'codepad.v1';
+  const $ = (s) => document.querySelector(s);
+  const words = (s) => new Set(s.split(' ').filter(Boolean));
+  const root = document.documentElement;
+  const app = $('#app'), ta = $('#code'), hl = $('#hl'), hlCode = $('#hl code'), gutter = $('#gutter');
+  const lnText = $('#lnText'), lnCur = $('#lnCur'), under = $('#under'), over = $('#over');
+  const PADT = 12, PADL = 12;
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // ---------- Icons ----------
+  const PATHS = {
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+    panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18"/>',
+    play: '<path d="M7 5v14l11-7z"/>',
+    more: '<circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    chevR: '<path d="M9 6l6 6-6 6"/>', chevD: '<path d="M6 9l6 6 6-6"/>',
+    up: '<path d="M12 19V5M6 11l6-6 6 6"/>', down: '<path d="M12 5v14M6 13l6 6 6-6"/>',
+    files: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/>',
+    newFile: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/>',
+    trash: '<path d="M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    clear: '<path d="M4 20h16M7 16L17 4"/>',
+    error: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>',
+    warning: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+    check: '<path d="M5 12l5 5 9-10"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+    left: '<path d="M19 12H5M11 6l-6 6 6 6"/>', right: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+    redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
+    move: '<path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>'
+  };
+  const svg = (n) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + PATHS[n] + '</svg>';
+  // Suggest-widget symbol icons, 16px grid
+  const SI = {
+    K: '<path d="M2 4.5h7M2 8h12M2 11.5h5" stroke="currentColor" stroke-width="1.4" fill="none"/>',
+    F: '<path d="M8 1.8l5.4 3v6.4L8 14.2l-5.4-3V4.8z M2.6 4.8L8 7.8l5.4-3M8 7.8v6.4" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>',
+    W: '<path d="M4.5 3H2.5v10h2M11.5 3h2v10h-2" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="5.8" y="6.2" width="4.4" height="3.6" fill="currentColor"/>',
+    S: '<rect x="2.5" y="2.5" width="11" height="11" rx="1" stroke="currentColor" stroke-width="1.2" fill="none" stroke-dasharray="2.2 1.6"/><path d="M5.5 8h5" stroke="currentColor" stroke-width="1.2"/>',
+    T: '<path d="M5.5 4L1.8 8l3.7 4M10.5 4l3.7 4-3.7 4" stroke="currentColor" stroke-width="1.4" fill="none"/>',
+    V: '<path d="M2.5 3h6v4h-6zM7.5 9h6v4h-6z" stroke="currentColor" stroke-width="1.2" fill="none"/>',
+    P: '<path d="M3 13l5.5-5.5M9.5 2.5a3.5 3.5 0 1 0 4 4l-2-.5-1.5-1.5z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/>'
+  };
+  SI.M = SI.F; SI.A = SI.P;
+  const sgIcon = (k) => '<span class="sg-ico si-' + k + '" aria-hidden="true"><svg viewBox="0 0 16 16">' + SI[k] + '</svg></span>';
+
+  // ---------- Languages ----------
+  const LANGS = {
+    javascript: {
+      label: 'JavaScript', icon: 'JS', ext: 'js', indent: 2, line: '//', block: ['/*', '*/'], backtick: true,
+      kw: words('break case catch class const continue debugger default delete do else export extends finally for function if import in instanceof let new of return static super switch throw try typeof var void while with yield async await get set from as'),
+      ctl: words('break case catch continue default do else export finally for if import from return switch throw try while yield await'),
+      lit: words('true false null undefined NaN Infinity this'),
+      bi: words('console Math JSON Array Object String Number Boolean Promise Date Map Set RegExp Symbol Error parseInt parseFloat setTimeout setInterval clearTimeout clearInterval document window alert require module localStorage fetch structuredClone requestAnimationFrame'),
+      calls: words('parseInt parseFloat setTimeout setInterval clearTimeout clearInterval alert require fetch structuredClone requestAnimationFrame')
+    },
+    python: {
+      label: 'Python', icon: 'py', ext: 'py', indent: 4, line: '#', triple: true,
+      kw: words('and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case'),
+      ctl: words('assert break continue del elif else except finally for from if import raise return try while with yield await pass match case as'),
+      lit: words('True False None self'),
+      bi: words('print len range int str float list dict set tuple input open enumerate zip map filter sorted sum min max abs type isinstance round reversed any all bool chr ord'),
+      calls: words('print len range int str float list dict set tuple input open enumerate zip map filter sorted sum min max abs type isinstance round reversed any all bool chr ord')
+    },
+    html: { label: 'HTML', icon: '<>', ext: 'html', indent: 2 },
+    css: {
+      label: 'CSS', icon: '#', ext: 'css', indent: 2, block: ['/*', '*/'], css: true,
+      kw: words('@media @import @keyframes @font-face @supports @layer @container'),
+      lit: words('auto none inherit initial block inline flex grid absolute relative fixed sticky center bold solid'),
+      bi: words('var calc rgb rgba hsl min max clamp url')
+    },
+    c: {
+      label: 'C', icon: 'C', ext: 'c', indent: 4, line: '//', block: ['/*', '*/'], pre: true,
+      kw: words('auto break case char const continue default do double else enum extern float for goto if inline int long register return short signed sizeof static struct switch typedef union unsigned void volatile while bool'),
+      ctl: words('break case continue default do else for goto if return switch while'),
+      lit: words('NULL true false'),
+      bi: words('printf scanf malloc free strlen strcpy strcmp puts gets fopen fclose'),
+      calls: words('printf scanf malloc free strlen strcpy strcmp puts gets fopen fclose')
+    },
+    cpp: {
+      label: 'C++', icon: 'C+', ext: 'cpp', indent: 4, line: '//', block: ['/*', '*/'], pre: true,
+      kw: words('auto break case char const continue default do double else enum extern float for goto if inline int long return short signed sizeof static struct switch typedef union unsigned void volatile while bool class namespace using public private protected virtual template typename new delete operator friend try catch throw override final constexpr'),
+      ctl: words('break case continue default do else for goto if return switch while try catch throw'),
+      lit: words('NULL nullptr true false this'),
+      bi: words('std cout cin endl string vector map set pair printf'),
+      calls: words('printf')
+    },
+    java: {
+      label: 'Java', icon: 'J', ext: 'java', indent: 4, line: '//', block: ['/*', '*/'],
+      kw: words('abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for if implements import instanceof int interface long native new package private protected public return short static super switch synchronized throw throws transient try void volatile while var record'),
+      ctl: words('break case catch continue default do else finally for if return switch throw try while import package'),
+      lit: words('true false null this'),
+      bi: words('System String Math Integer List ArrayList HashMap Scanner')
+    },
+    text: { label: 'Plain Text', icon: '≡', ext: 'txt', indent: 2 }
+  };
+  for (const id in LANGS) LANGS[id].id = id;
+  const EXT = {};
+  for (const id in LANGS) EXT[LANGS[id].ext] = id;
+  Object.assign(EXT, { mjs: 'javascript', htm: 'html', h: 'c', hpp: 'cpp', cc: 'cpp', md: 'text' });
+  const fileIcon = (langId) => '<span class="fi fi-' + langId + '" aria-hidden="true">' + esc((LANGS[langId] || LANGS.text).icon) + '</span>';
+
+  const SAMPLES = [
+    { name: 'hello.js', lang: 'javascript', code: [
+      '// Tap ▷ to run. Type and watch the suggestions.',
+      'function greet(name) {',
+      '  return `Hello, ${name}!`;',
+      '}',
+      '',
+      "const langs = ['JavaScript', 'Python', 'C'];",
+      'for (const lang of langs) {',
+      '  console.log(greet(lang));',
+      '}',
+      '',
+      'const squares = [1, 2, 3, 4].map(n => n * n);',
+      "console.log('squares:', squares);",
+      ''].join('\n') },
+    { name: 'fizzbuzz.py', lang: 'python', code: [
+      '# FizzBuzz practice. Tap ▷ to run it.',
+      'def fizzbuzz(n):',
+      '    for i in range(1, n + 1):',
+      '        if i % 15 == 0:',
+      '            print("FizzBuzz")',
+      '        elif i % 3 == 0:',
+      '            print("Fizz")',
+      '        elif i % 5 == 0:',
+      '            print("Buzz")',
+      '        else:',
+      '            print(i)',
+      '',
+      'fizzbuzz(15)',
+      ''].join('\n') },
+    { name: 'counter.html', lang: 'html', code: [
+      '<!doctype html>',
+      '<style>',
+      '  body { font-family: sans-serif; padding: 24px; }',
+      '  button { font-size: 20px; padding: 8px 16px; }',
+      '</style>',
+      '',
+      '<h1>Counter</h1>',
+      '<button id="btn">Clicked 0 times</button>',
+      '',
+      '<script>',
+      '  let count = 0;',
+      "  const btn = document.getElementById('btn');",
+      "  btn.addEventListener('click', () => {",
+      '    count++;',
+      '    btn.textContent = `Clicked ${count} times`;',
+      '  });',
+      '<\/script>',
+      ''].join('\n') }
+  ];
+
+  // ---------- Suggestion data ----------
+  // Snippets: [trigger, body, description]. ${1:text} is selected after inserting, $0 is where the cursor lands otherwise. \t is one indent step.
+  const SNIPS = {
+    javascript: [
+      ['log', 'console.log($0);', 'print to console'],
+      ['fn', 'function ${1:name}($2) {\n\t$0\n}', 'function'],
+      ['arrow', 'const ${1:name} = ($2) => {\n\t$0\n};', 'arrow function'],
+      ['for', 'for (let i = 0; i < ${1:n}; i++) {\n\t$0\n}', 'counting loop'],
+      ['forof', 'for (const ${1:item} of ${2:items}) {\n\t$0\n}', 'loop over items'],
+      ['foreach', '${1:array}.forEach((item) => {\n\t$0\n});', 'forEach loop'],
+      ['if', 'if (${1:condition}) {\n\t$0\n}', 'if block'],
+      ['ifelse', 'if (${1:condition}) {\n\t$0\n} else {\n\t\n}', 'if / else'],
+      ['while', 'while (${1:condition}) {\n\t$0\n}', 'while loop'],
+      ['switch', 'switch (${1:value}) {\n\tcase 1:\n\t\t$0\n\t\tbreak;\n\tdefault:\n\t\tbreak;\n}', 'switch'],
+      ['try', 'try {\n\t$0\n} catch (err) {\n\tconsole.error(err);\n}', 'try / catch'],
+      ['class', 'class ${1:Name} {\n\tconstructor($2) {\n\t\t$0\n\t}\n}', 'class'],
+      ['timeout', 'setTimeout(() => {\n\t$0\n}, ${1:1000});', 'run later'],
+      ['interval', 'setInterval(() => {\n\t$0\n}, ${1:1000});', 'repeat every ms'],
+      ['fetch', "const res = await fetch(${1:'https://'});\nconst data = await res.json();\n$0", 'fetch JSON'],
+      ['qs', "document.querySelector('${1:selector}')$0", 'find element'],
+      ['on', "${1:el}.addEventListener('${2:click}', (e) => {\n\t$0\n});", 'event listener']
+    ],
+    python: [
+      ['print', 'print($0)', 'print output'],
+      ['def', 'def ${1:name}($2):\n\t$0', 'function'],
+      ['class', 'class ${1:Name}:\n\tdef __init__(self$2):\n\t\t$0', 'class'],
+      ['for', 'for ${1:item} in ${2:items}:\n\t$0', 'loop over items'],
+      ['forr', 'for i in range(${1:10}):\n\t$0', 'loop with range'],
+      ['if', 'if ${1:condition}:\n\t$0', 'if block'],
+      ['ifelse', 'if ${1:condition}:\n\t$0\nelse:\n\t', 'if / else'],
+      ['while', 'while ${1:condition}:\n\t$0', 'while loop'],
+      ['try', 'try:\n\t$0\nexcept Exception as e:\n\tprint(e)', 'try / except'],
+      ['with', "with open(${1:'file.txt'}) as f:\n\t$0", 'open a file'],
+      ['main', 'if __name__ == "__main__":\n\t$0', 'main guard'],
+      ['comp', '[${1:x} for x in ${2:items}]$0', 'list comprehension'],
+      ['inp', '${1:name} = input("${2:Enter a value: }")$0', 'read input']
+    ],
+    c: [
+      ['main', '#include <stdio.h>\n\nint main(void) {\n\t$0\n\treturn 0;\n}', 'program start'],
+      ['include', '#include <${1:stdio.h}>$0', 'include header'],
+      ['printf', 'printf("$0\\n");', 'print line'],
+      ['scanf', 'scanf("%d", &${1:x});$0', 'read a number'],
+      ['for', 'for (int i = 0; i < ${1:n}; i++) {\n\t$0\n}', 'counting loop'],
+      ['if', 'if (${1:condition}) {\n\t$0\n}', 'if block'],
+      ['while', 'while (${1:condition}) {\n\t$0\n}', 'while loop'],
+      ['struct', 'struct ${1:Name} {\n\t$0\n};', 'struct']
+    ],
+    cpp: [
+      ['main', '#include <iostream>\nusing namespace std;\n\nint main() {\n\t$0\n\treturn 0;\n}', 'program start'],
+      ['include', '#include <${1:iostream}>$0', 'include header'],
+      ['cout', 'cout << $0 << endl;', 'print line'],
+      ['cin', 'cin >> $0;', 'read input'],
+      ['for', 'for (int i = 0; i < ${1:n}; i++) {\n\t$0\n}', 'counting loop'],
+      ['forr', 'for (auto& ${1:x} : ${2:items}) {\n\t$0\n}', 'loop over items'],
+      ['if', 'if (${1:condition}) {\n\t$0\n}', 'if block'],
+      ['while', 'while (${1:condition}) {\n\t$0\n}', 'while loop'],
+      ['class', 'class ${1:Name} {\npublic:\n\t$0\n};', 'class'],
+      ['vec', 'vector<${1:int}> ${2:v};$0', 'vector']
+    ],
+    java: [
+      ['main', 'public class ${1:Main} {\n\tpublic static void main(String[] args) {\n\t\t$0\n\t}\n}', 'program start'],
+      ['psvm', 'public static void main(String[] args) {\n\t$0\n}', 'main method'],
+      ['sout', 'System.out.println($0);', 'print line'],
+      ['for', 'for (int i = 0; i < ${1:n}; i++) {\n\t$0\n}', 'counting loop'],
+      ['fore', 'for (${1:int} x : ${2:items}) {\n\t$0\n}', 'loop over items'],
+      ['if', 'if (${1:condition}) {\n\t$0\n}', 'if block'],
+      ['while', 'while (${1:condition}) {\n\t$0\n}', 'while loop'],
+      ['method', 'public ${1:void} name($2) {\n\t$0\n}', 'method'],
+      ['scanner', 'Scanner sc = new Scanner(System.in);\n$0', 'read input'],
+      ['try', 'try {\n\t$0\n} catch (Exception e) {\n\te.printStackTrace();\n}', 'try / catch']
+    ],
+    css: [
+      ['@media', '@media (max-width: ${1:600px}) {\n\t$0\n}', 'screen size rule'],
+      ['@keyframes', '@keyframes ${1:name} {\n\tfrom { $0 }\n\tto { }\n}', 'animation'],
+      [':root', ':root {\n\t--${1:color}: $0;\n}', 'variables']
+    ]
+  };
+
+  // Members offered after a dot. "name()" inserts a call; a plain name is a property.
+  const MEMBERS = {
+    javascript: {
+      console: 'log() warn() error() info() table() clear() time() timeEnd()',
+      Math: 'floor() ceil() round() random() max() min() abs() sqrt() pow() trunc() sign() PI',
+      JSON: 'stringify() parse()',
+      Object: 'keys() values() entries() assign() freeze() fromEntries()',
+      Array: 'isArray() from() of()',
+      Number: 'isInteger() isNaN() parseFloat() parseInt() MAX_SAFE_INTEGER',
+      Promise: 'all() allSettled() race() any() resolve() reject()',
+      document: 'getElementById() querySelector() querySelectorAll() createElement() addEventListener() body title',
+      localStorage: 'getItem() setItem() removeItem() clear()',
+      window: 'addEventListener() innerWidth innerHeight location scrollTo() requestAnimationFrame()',
+      classList: 'add() remove() toggle() contains()',
+      _: 'length map() filter() reduce() forEach() find() findIndex() some() every() includes() indexOf() push() pop() shift() unshift() slice() splice() join() sort() reverse() concat() flat() at() split() trim() toUpperCase() toLowerCase() replace() replaceAll() startsWith() endsWith() padStart() repeat() toString() toFixed() then() catch() textContent innerHTML value style classList addEventListener() appendChild() remove() setAttribute() querySelector()'
+    },
+    python: {
+      math: 'sqrt() floor() ceil() pow() pi e gcd() factorial()',
+      random: 'randint() choice() random() shuffle() sample()',
+      _: 'append() extend() insert() pop() remove() index() count() sort() reverse() copy() clear() split() join() strip() upper() lower() title() replace() find() startswith() endswith() format() isdigit() isalpha() keys() values() items() get() update() add()'
+    },
+    java: {
+      System: 'out in currentTimeMillis()',
+      'System.out': 'println() print() printf()',
+      Math: 'max() min() abs() sqrt() pow() random() round() floor() ceil() PI',
+      _: 'length() charAt() substring() equals() indexOf() contains() split() toUpperCase() toLowerCase() trim() size() add() get() set() remove() put() containsKey() isEmpty() nextInt() nextLine() next() toString()'
+    },
+    cpp: {
+      std: 'cout cin endl string vector sort() max() min() swap()',
+      _: 'size() push_back() pop_back() begin() end() empty() clear() at() length() substr() find() insert() erase() front() back() first second'
+    },
+    c: { _: '' }
+  };
+
+  const HTML_TAGS = {
+    div: '<div>$0</div>', span: '<span>$0</span>', p: '<p>$0</p>', a: '<a href="${1:#}">$0</a>',
+    h1: '<h1>$0</h1>', h2: '<h2>$0</h2>', h3: '<h3>$0</h3>', button: '<button>$0</button>',
+    img: '<img src="${1:}" alt="$0">', input: '<input type="${1:text}"$0>', label: '<label>$0</label>',
+    form: '<form>\n\t$0\n</form>', ul: '<ul>\n\t<li>$0</li>\n</ul>', ol: '<ol>\n\t<li>$0</li>\n</ol>', li: '<li>$0</li>',
+    section: '<section>\n\t$0\n</section>', header: '<header>\n\t$0\n</header>', footer: '<footer>\n\t$0\n</footer>',
+    main: '<main>\n\t$0\n</main>', nav: '<nav>\n\t$0\n</nav>', strong: '<strong>$0</strong>', em: '<em>$0</em>',
+    br: '<br>$0', hr: '<hr>$0', pre: '<pre>$0</pre>', code: '<code>$0</code>', textarea: '<textarea>$0</textarea>',
+    select: '<select>\n\t<option>$0</option>\n</select>', option: '<option>$0</option>', canvas: '<canvas id="${1:canvas}" width="300" height="150"></canvas>$0',
+    table: '<table>\n\t<tr>\n\t\t<td>$0</td>\n\t</tr>\n</table>', tr: '<tr>$0</tr>', td: '<td>$0</td>',
+    script: '<script>\n\t$0\n<\/script>', style: '<style>\n\t$0\n</style>', link: '<link rel="stylesheet" href="$0">'
+  };
+  const HTML5 = '<!doctype html>\n<html lang="en">\n<head>\n\t<meta charset="utf-8">\n\t<meta name="viewport" content="width=device-width, initial-scale=1">\n\t<title>${1:Document}</title>\n</head>\n<body>\n\t$0\n</body>\n</html>';
+  const HTML_ATTRS = 'class id style href src alt type name value placeholder onclick for rel width height disabled checked required title target';
+  const VOID = words('area base br col embed hr img input link meta source track wbr');
+  const CSS_PROPS = 'display position top right bottom left inset width height min-width max-width min-height max-height margin padding border border-radius background background-color color font-size font-weight font-family line-height text-align text-decoration text-transform letter-spacing gap flex flex-direction flex-wrap justify-content align-items align-content grid-template-columns grid-template-rows overflow opacity z-index transition transform animation box-shadow cursor box-sizing white-space outline content list-style object-fit aspect-ratio filter';
+  const CSS_VALUES = {
+    display: 'block inline inline-block flex grid none', position: 'static relative absolute fixed sticky',
+    'justify-content': 'center flex-start flex-end space-between space-around space-evenly', 'align-items': 'center flex-start flex-end stretch baseline',
+    'text-align': 'left center right justify', 'font-weight': 'normal bold 400 500 600 700', cursor: 'pointer default text not-allowed',
+    overflow: 'hidden auto scroll visible', 'flex-direction': 'row column row-reverse column-reverse', 'flex-wrap': 'wrap nowrap',
+    'box-sizing': 'border-box content-box', 'white-space': 'nowrap normal pre pre-wrap', 'text-decoration': 'none underline line-through',
+    'text-transform': 'uppercase lowercase capitalize none', 'object-fit': 'cover contain fill', _: 'auto none inherit initial 0 100% transparent'
+  };
+  const CSS_TAGS = 'body html div span p a h1 h2 h3 button input img ul li section header footer main nav form table';
+
+  // ---------- State ----------
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  function seed() {
+    const files = SAMPLES.map((s, i) => ({ id: uid(), name: s.name, lang: s.lang, code: s.code, updated: Date.now() - i * 60000 }));
+    return {
+      files, current: files[0].id, open: files.map((f) => f.id), fontSize: 15, indent: 'auto', theme: 'system', pane: 'explorer',
+      autoClose: true, suggest: true, ghost: true, bracketColors: true, lens: true, haptics: true
+    };
+  }
+  function loadState() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (s && Array.isArray(s.files) && s.files.length) {
+        const st = Object.assign(seed(), s);
+        if (!Array.isArray(s.open)) st.open = [st.current];
+        if (!s.v2 && st.fontSize === 16) st.fontSize = 15;
+        st.v2 = true;
+        return st;
+      }
+    } catch (e) {}
+    return Object.assign(seed(), { v2: true });
+  }
+  let state = loadState();
+  let saveT = null;
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function saveSoon() { clearTimeout(saveT); saveT = setTimeout(() => { commit(); save(); }, 400); }
+  const byId = (id) => state.files.find((f) => f.id === id);
+  const cur = () => byId(state.current) || state.files[0];
+  const lang = () => LANGS[cur().lang] || LANGS.text;
+  const unit = () => ' '.repeat(state.indent === 'auto' ? lang().indent : +state.indent);
+  const lineH = () => Math.round(state.fontSize * 1.5);
+  function commit() {
+    const f = cur();
+    if (f.code !== ta.value) { f.code = ta.value; f.updated = Date.now(); }
+    f.pos = ta.selectionStart; f.st = ta.scrollTop;
+  }
+
+  // ---------- Syntax highlighting ----------
+  const span = (c, s) => '<span class="t-' + c + '">' + esc(s) + '</span>';
+  const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&');
+  let bDepth = 0;
+  // Plain text between tokens; brackets get a color by nesting depth.
+  function gap(s) {
+    if (!s) return '';
+    const e = esc(s);
+    if (!/[()[\]{}]/.test(s)) return e;
+    return e.replace(/[()[\]{}]/g, (ch) => {
+      if ('([{'.includes(ch)) { const d = bDepth++; return state.bracketColors ? '<span class="b' + (d % 3) + '">' + ch + '</span>' : ch; }
+      bDepth = Math.max(0, bDepth - 1);
+      return state.bracketColors ? '<span class="b' + (bDepth % 3) + '">' + ch + '</span>' : ch;
+    });
+  }
+  const reCache = {};
+  function codeRe(L) {
+    if (reCache[L.id]) return reCache[L.id];
+    const com = [], str = [], parts = [];
+    if (L.line) com.push(escRe(L.line) + '[^\\n]*');
+    if (L.block) com.push(escRe(L.block[0]) + '[\\s\\S]*?(?:' + escRe(L.block[1]) + '|$)');
+    if (L.triple) str.push('"""[\\s\\S]*?(?:"""|$)', "'''[\\s\\S]*?(?:'''|$)");
+    str.push(String.raw`"(?:\\.|[^"\\\n])*"?`, String.raw`'(?:\\.|[^'\\\n])*'?`);
+    if (L.backtick) str.push(String.raw`\x60(?:\\[\s\S]|[^\x60\\])*\x60?`);
+    if (L.pre) parts.push(String.raw`(?<pre>^[ \t]*#[ \t]*\w+)`);
+    if (com.length) parts.push('(?<com>' + com.join('|') + ')');
+    parts.push('(?<str>' + str.join('|') + ')');
+    if (L.css) parts.push(String.raw`(?<num>#[\da-fA-F]{3,8}\b|-?\b\d+\.?\d*(?:[a-z]+|%)?)`);
+    else parts.push(String.raw`(?<num>\b(?:0[xXbBoO][\da-fA-F_]+|\d[\d_]*\.?\d*(?:[eE][+-]?\d+)?)[a-zA-Z]*)`);
+    parts.push(L.css ? String.raw`(?<word>@?-?[A-Za-z_][\w-]*)` : String.raw`(?<word>[A-Za-z_$][\w$]*)`);
+    return (reCache[L.id] = new RegExp(parts.join('|'), 'gm'));
+  }
+  function classify(w, text, end, start, L) {
+    if (L.kw && L.kw.has(w)) return L.ctl && L.ctl.has(w) ? 'ctl' : 'kw';
+    if (L.lit && L.lit.has(w)) return 'lit';
+    let i = end;
+    while (text[i] === ' ' || text[i] === '\t') i++;
+    if (L.css) {
+      if (bDepth === 0) return 'sel';
+      if (text[i] === ':' && /^[ \t]*$/.test(text.slice(text.lastIndexOf('\n', start - 1) + 1, start).replace(/^.*[;{]/, ''))) return 'prop';
+      if (text[i] === '(') return 'fn';
+      return null;
+    }
+    if (text[i] === '(') return 'fn';
+    if (L.bi && L.bi.has(w)) return /^[A-Z]/.test(w) ? 'type' : 'var';
+    if (/^[A-Z][a-z]/.test(w)) return 'type';
+    return 'var';
+  }
+  function hlSource(text, L) {
+    const re = codeRe(L);
+    re.lastIndex = 0;
+    let out = '', last = 0, m;
+    while ((m = re.exec(text))) {
+      if (!m[0]) { re.lastIndex++; continue; }
+      out += gap(text.slice(last, m.index));
+      const g = m.groups;
+      const cls = g.pre ? 'kw' : g.com ? 'com' : g.str ? 'str' : g.num ? 'num' : classify(m[0], text, re.lastIndex, m.index, L);
+      out += cls ? span(cls, m[0]) : esc(m[0]);
+      last = re.lastIndex;
+    }
+    return out + gap(text.slice(last));
+  }
+  function hlTag(s) {
+    const head = /^(<\/?)([\w-]*)/.exec(s);
+    let out = span('pun', head[1]) + span('tag', head[2]);
+    const rest = s.slice(head[0].length);
+    const re = /("[^"]*"?|'[^']*'?)|(\/?>)|([^\s="'\/>]+)/g;
+    let last = 0, t;
+    while ((t = re.exec(rest))) {
+      out += esc(rest.slice(last, t.index));
+      out += t[1] ? span('str', t[1]) : t[2] ? span('pun', t[2]) : span('attr', t[3]);
+      last = re.lastIndex;
+    }
+    return out + esc(rest.slice(last));
+  }
+  function hlHTML(text) {
+    const re = /(<!--[\s\S]*?(?:-->|$))|(<!doctype[^>]*>?)|(<(script|style)\b[^>]*>)([\s\S]*?)(<\/\4\s*>|$)|(<\/?[A-Za-z][\w-]*(?:"[^"]*"|'[^']*'|[^'">])*>?)|(&#?\w+;)/gi;
+    let out = '', last = 0, m;
+    while ((m = re.exec(text))) {
+      if (!m[0]) { re.lastIndex++; continue; }
+      out += esc(text.slice(last, m.index));
+      if (m[1] || m[2]) out += span('com', m[0]);
+      else if (m[3]) {
+        bDepth = 0;
+        out += hlTag(m[3]) + hlSource(m[5], m[4].toLowerCase() === 'script' ? LANGS.javascript : LANGS.css);
+        if (m[6]) out += hlTag(m[6]);
+      }
+      else if (m[7]) out += hlTag(m[7]);
+      else out += span('lit', m[0]);
+      last = re.lastIndex;
+    }
+    return out + esc(text.slice(last));
+  }
+  // Indent guides: wrap each leading indent step in a span that draws a thin vertical line.
+  function addGuides(html, v) {
+    const u = unit().length || 2;
+    const raw = v.split('\n'), out = html.split('\n');
+    if (raw.length !== out.length) return html;
+    const lvl = raw.map((l) => {
+      if (!l.trim()) return -1;
+      let n = 0, sp = 0;
+      for (const c of l) { if (c === '\t') { n++; sp = 0; } else if (c === ' ') { if (++sp === u) { n++; sp = 0; } } else break; }
+      return n;
+    });
+    const prev = [], next = [];
+    for (let i = 0, p = 0; i < lvl.length; i++) { prev[i] = p; if (lvl[i] >= 0) p = lvl[i]; }
+    for (let i = lvl.length - 1, q = 0; i >= 0; i--) { next[i] = q; if (lvl[i] >= 0) q = lvl[i]; }
+    const one = '<span class="ig">' + ' '.repeat(u) + '</span>';
+    for (let i = 0; i < out.length; i++) {
+      if (lvl[i] < 0) { const n = Math.min(prev[i], next[i]); if (n && !/</.test(out[i])) out[i] = one.repeat(n); continue; }
+      if (!lvl[i]) continue;
+      const ws = /^[ \t]*/.exec(out[i])[0];
+      let s = '', k = 0;
+      while (k < ws.length) {
+        if (ws[k] === '\t') { s += '<span class="ig">\t</span>'; k++; }
+        else if (ws.slice(k, k + u) === ' '.repeat(u)) { s += one; k += u; }
+        else { s += ws.slice(k); break; }
+      }
+      out[i] = s + out[i].slice(ws.length);
+    }
+    return out.join('\n');
+  }
+
+  let lastLines = 0;
+  function render() {
+    const L = lang(), v = ta.value;
+    bDepth = 0;
+    let html = L.id === 'html' ? hlHTML(v) : L.id === 'text' ? esc(v) : hlSource(v, L);
+    if (L.id !== 'text') html = addGuides(html, v);
+    hlCode.innerHTML = html + '\n';
+    const n = lineStarts().length;
+    if (n !== lastLines) {
+      let s = '1';
+      for (let i = 2; i <= n; i++) s += '\n' + i;
+      lnText.textContent = s;
+      root.style.setProperty('--gw', Math.max(2, String(n).length));
+      lastLines = n;
+    }
+    syncScroll();
+    scheduleDeco();
+  }
+  function syncScroll() {
+    hl.scrollTop = ta.scrollTop;
+    hl.scrollLeft = ta.scrollLeft;
+    gutter.scrollTop = ta.scrollTop;
+    const t = 'translate(' + -ta.scrollLeft + 'px,' + -ta.scrollTop + 'px)';
+    under.style.transform = t;
+    over.style.transform = t;
+    if (sg.box) placeSuggest();
+  }
+  ta.addEventListener('scroll', syncScroll, { passive: true });
+
+  // ---------- Geometry ----------
+  let lsCache = [0], lsText = '';
+  function lineStarts() {
+    const v = ta.value;
+    if (v !== lsText) {
+      lsCache = [0];
+      for (let i = 0; i < v.length; i++) if (v.charCodeAt(i) === 10) lsCache.push(i + 1);
+      lsText = v;
+    }
+    return lsCache;
+  }
+  function lineOf(p) {
+    const a = lineStarts();
+    let lo = 0, hi = a.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (a[mid] <= p) lo = mid; else hi = mid - 1; }
+    return lo;
+  }
+  const lineText = (i) => { const a = lineStarts(), v = ta.value; return v.slice(a[i], i + 1 < a.length ? a[i + 1] - 1 : v.length); };
+  let charW = 0, charWKey = '';
+  function charWidth() {
+    const k = state.fontSize + '|' + (document.fonts ? document.fonts.status : '');
+    if (k !== charWKey || !charW) {
+      const c = charWidth.ctx || (charWidth.ctx = document.createElement('canvas').getContext('2d'));
+      c.font = state.fontSize + 'px ' + getComputedStyle(ta).fontFamily;
+      charW = c.measureText('MMMMMMMMMM').width / 10 || state.fontSize * 0.6;
+      charWKey = k;
+    }
+    return charW;
+  }
+  function vcol(v, from, to) { let c = 0; for (let i = from; i < to; i++) c = v[i] === '\t' ? c + 4 - (c % 4) : c + 1; return c; }
+  function contentXY(p) {
+    const v = ta.value, line = lineOf(p), ls = lineStarts()[line];
+    return { x: PADL + vcol(v, ls, p) * charWidth(), y: PADT + line * lineH(), line, col: p - ls };
+  }
+  function caretXY(p) { const c = contentXY(p); return { x: c.x - ta.scrollLeft, y: c.y - ta.scrollTop, lh: lineH() }; }
+  function reveal(p) {
+    const { x, y } = contentXY(p), lh = lineH(), H = ta.clientHeight, W = ta.clientWidth;
+    if (y < ta.scrollTop + lh) ta.scrollTop = Math.max(0, y - lh * 2);
+    else if (y + lh > ta.scrollTop + H * 0.7) ta.scrollTop = y - H * 0.35;
+    if (x < ta.scrollLeft + 20) ta.scrollLeft = Math.max(0, x - 40);
+    else if (x > ta.scrollLeft + W - 40) ta.scrollLeft = x - W + 80;
+    syncScroll();
+  }
+
+  // ---------- Decorations: current line, word highlights, bracket match, find, problems, ghost text ----------
+  let decoQueued = false;
+  function scheduleDeco() { if (!decoQueued) { decoQueued = true; requestAnimationFrame(() => { decoQueued = false; updateDeco(); }); } }
+  const rect = (cls, x, y, w, h) => '<div class="' + cls + '" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px"></div>';
+  function rangeRect(cls, p, len) {
+    const a = contentXY(p), v = ta.value;
+    return rect(cls, a.x, a.y, Math.max(2, vcol(v, p, p + len) * charWidth()), lineH());
+  }
+  function wordAt(v, p) {
+    let s = p, e = p;
+    while (s > 0 && /[\w$]/.test(v[s - 1])) s--;
+    while (e < v.length && /[\w$]/.test(v[e])) e++;
+    return e > s ? { s, e, w: v.slice(s, e) } : null;
+  }
+  function matchBracket(v, p) {
+    const O = '([{', C = ')]}';
+    for (const at of [p - 1, p]) {
+      const ch = v[at];
+      if (ch == null) continue;
+      let i = O.indexOf(ch), dir = 1, open = ch, close = C[i];
+      if (i < 0) { i = C.indexOf(ch); if (i < 0) continue; dir = -1; open = O[i]; close = ch; }
+      let d = 0;
+      for (let k = at, n = 0; k >= 0 && k < v.length && n < 30000; k += dir, n++) {
+        if (v[k] === open) d += dir;
+        else if (v[k] === close) d -= dir;
+        if (d === 0) return [at, k];
+      }
+    }
+    return null;
+  }
+  function updateDeco() {
+    const v = ta.value, s = ta.selectionStart, e = ta.selectionEnd, lh = lineH();
+    const c = contentXY(e);
+    let u = rect('d-line', 0, c.y, 100000, lh), o = '';
+    lnCur.style.top = c.y + 'px';
+    lnCur.style.height = lh + 'px';
+    lnCur.textContent = c.line + 1;
+    if (state.lens) for (const d of diags) u += rect('d-lens-bg ' + d.sev, 0, PADT + lineOf(d.pos) * lh, 100000, lh);
+    if (find.open && find.len) {
+      const n = Math.min(find.matches.length, 600);
+      for (let i = 0; i < n; i++) u += rangeRect('d-find' + (i === find.cur ? ' cur' : ''), find.matches[i], find.len);
+    }
+    if (s === e && lang().id !== 'text') {
+      const w = wordAt(v, s);
+      if (w && w.w.length > 1 && !/^\d/.test(w.w) && !find.open) {
+        const re = new RegExp('(?<![\\w$])' + escRe(w.w) + '(?![\\w$])', 'g');
+        const hits = [];
+        let m;
+        while ((m = re.exec(v)) && hits.length < 300) hits.push(m.index);
+        if (hits.length > 1) for (const h of hits) u += rangeRect('d-occ', h, w.w.length);
+      }
+      const bm = matchBracket(v, s);
+      if (bm) u += rangeRect('d-bm', bm[0], 1) + rangeRect('d-bm', bm[1], 1);
+    }
+    const cw = charWidth();
+    const seenLine = new Set();
+    for (const d of diags) {
+      const a = contentXY(Math.min(d.pos, v.length));
+      o += rect('d-sq ' + d.sev, a.x, a.y + lh - 4, Math.max(cw, vcol(v, d.pos, Math.min(v.length, d.pos + d.len)) * cw), 4);
+      if (state.lens && !seenLine.has(a.line)) {
+        seenLine.add(a.line);
+        const lt = lineText(a.line);
+        o += '<div class="d-lens ' + d.sev + '" style="left:' + (PADL + (vcol(lt, 0, lt.length) + 3) * cw) + 'px;top:' + a.y + 'px">' + esc(d.msg) + '</div>';
+      }
+    }
+    if (sg.ghost) o += '<div class="ghost" style="left:' + c.x + 'px;top:' + c.y + 'px">' + esc(sg.ghost) + '</div>';
+    under.innerHTML = u;
+    over.innerHTML = o;
+    updateStatus(c);
+    updateCrumbs(c.line);
+  }
+
+  // ---------- Status bar + breadcrumbs ----------
+  const sbProblems = $('#sbProblems'), sbPos = $('#sbPos'), sbIndent = $('#sbIndent'), sbLang = $('#sbLang');
+  function updateStatus(c) {
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    sbPos.textContent = 'Ln ' + (c.line + 1) + ', Col ' + (c.col + 1) + (e > s ? ' (' + (e - s) + ' selected)' : '');
+    const nE = diags.filter((d) => d.sev === 'error').length, nW = diags.length - nE;
+    sbProblems.innerHTML = svg('error') + nE + ' ' + svg('warning') + nW;
+    sbIndent.textContent = 'Spaces: ' + unit().length;
+    sbLang.textContent = lang().label;
+    $('#probBadge').textContent = diags.length;
+  }
+  const DEF = {
+    javascript: /^\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function\s*\*?\s*([\w$]+)|class\s+([\w$]+)|(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[\w$]+\s*=>)|([\w$]+)\s*\([^)]*\)\s*\{)/,
+    python: /^\s*(?:async\s+)?(?:def|class)\s+(\w+)/,
+    c: /^\s*(?:[\w<>[\]*&:,]+\s+)+\**(\w+)\s*\([^;]*$/,
+    css: /^\s*([^{};]+?)\s*\{/
+  };
+  DEF.cpp = DEF.c; DEF.java = DEF.c;
+  const NOT_FN = words('if for while switch return else catch sizeof new');
+  let crumbKey = '';
+  function updateCrumbs(line) {
+    const L = lang(), f = cur(), re = DEF[L.id];
+    let sym = null;
+    if (re) {
+      let minInd = Infinity;
+      for (let i = line; i >= 0 && i > line - 500; i--) {
+        const t = lineText(i);
+        if (!t.trim()) continue;
+        const ind = /^[ \t]*/.exec(t)[0].length;
+        if (i !== line && ind >= minInd) continue;
+        const m = re.exec(t);
+        if (m) {
+          const name = (m[1] || m[2] || m[3] || m[4] || '').trim();
+          if (name && !NOT_FN.has(name)) { sym = name; break; }
+        }
+        minInd = Math.min(minInd, ind);
+        if (ind === 0 && i !== line) break;
+      }
+    }
+    const key = f.id + '|' + f.name + '|' + sym;
+    if (key === crumbKey) return;
+    crumbKey = key;
+    $('#crumbs').innerHTML = '<span>code-pad</span><span class="sep">›</span><button data-crumb="file">' + fileIcon(f.lang) + esc(f.name) + '</button>' +
+      (sym ? '<span class="sep">›</span><span><span class="sym">ƒ</span> ' + esc(sym) + '</span>' : '');
+  }
+  $('#crumbs').addEventListener('click', (e) => { if (e.target.closest('[data-crumb]')) openPalette(''); });
+
+  // ---------- Editing primitives ----------
+  let busy = false;
+  function replaceRange(start, end, text, selStart, selEnd) {
+    if (document.activeElement !== ta) ta.focus({ preventScroll: true });
+    ta.setSelectionRange(start, end);
+    busy = true;
+    let ok = false;
+    try {
+      ok = text === '' ? (start === end || document.execCommand('delete', false)) : document.execCommand('insertText', false, text);
+    } catch (e) { ok = false; }
+    if (!ok || ta.value.slice(start, start + text.length) !== text) ta.setRangeText(text, start, end, 'end');
+    busy = false;
+    if (selStart != null) ta.setSelectionRange(selStart, selEnd == null ? selStart : selEnd);
+    afterEdit();
+  }
+  function afterEdit() { render(); saveSoon(); lintSoon(); if (find.open) runFind(true); }
+  const lineStart = (v, p) => v.lastIndexOf('\n', p - 1) + 1;
+  const lineEnd = (v, p) => { const i = v.indexOf('\n', p); return i < 0 ? v.length : i; };
+  const leadWS = (s) => /^[ \t]*/.exec(s)[0];
+
+  const PAIRS = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '`': '`' };
+  const CLOSERS = new Set([')', ']', '}', '"', "'", '`']);
+  const QUOTES = new Set(['"', "'", '`']);
+  function canPair(ch, v, at, after) {
+    const prev = v[at - 1] || '', next = v[after] || '';
+    if (QUOTES.has(ch)) {
+      if (ch === '`' && lang().id !== 'javascript') return false;
+      if (ch === "'" && lang().id === 'text') return false;
+      return !/[\w]/.test(prev) && !/[\w]/.test(next);
+    }
+    return next === '' || /[\s)\]};,:.]/.test(next);
+  }
+  function selLines() {
+    const v = ta.value, s = ta.selectionStart, e = ta.selectionEnd;
+    const ls = lineStart(v, s);
+    const le = lineEnd(v, e > s && v[e - 1] === '\n' ? e - 1 : e);
+    return { v, s, e, ls, le };
+  }
+  function transformLines(fn) {
+    const { v, s, e, ls, le } = selLines();
+    const lines = v.slice(ls, le).split('\n');
+    const out = lines.map(fn);
+    const text = out.join('\n');
+    if (text === v.slice(ls, le)) return;
+    if (s === e) replaceRange(ls, le, text, Math.max(ls, s + out[0].length - lines[0].length));
+    else replaceRange(ls, le, text, ls, ls + text.length);
+  }
+  function indent() {
+    const { v, s, e } = selLines();
+    if (s === e || v.slice(s, e).indexOf('\n') < 0) return replaceRange(s, e, unit(), s + unit().length);
+    transformLines((l) => (l.length ? unit() + l : l));
+  }
+  function outdent() {
+    const n = unit().length;
+    transformLines((l) => {
+      if (l[0] === '\t') return l.slice(1);
+      let i = 0;
+      while (i < n && l[i] === ' ') i++;
+      return l.slice(i);
+    });
+  }
+  function toggleComment() {
+    const L = lang();
+    const { v, ls, le } = selLines();
+    const real = v.slice(ls, le).split('\n').filter((l) => l.trim());
+    if (!real.length) return;
+    if (L.line) {
+      const mark = L.line;
+      const all = real.every((l) => l.trimStart().startsWith(mark));
+      const minInd = Math.min(...real.map((l) => leadWS(l).length));
+      transformLines((l) => {
+        if (!l.trim()) return l;
+        if (all) return l.replace(new RegExp('^([ \\t]*)' + escRe(mark) + ' ?'), '$1');
+        return l.slice(0, minInd) + mark + ' ' + l.slice(minInd);
+      });
+    } else {
+      const [a, b] = L.id === 'html' ? ['<!--', '-->'] : ['/*', '*/'];
+      const re = new RegExp('^([ \\t]*)' + escRe(a) + ' ?(.*?) ?' + escRe(b) + '$');
+      const all = real.every((l) => re.test(l));
+      transformLines((l) => {
+        if (!l.trim()) return l;
+        if (all) return l.replace(re, '$1$2');
+        const ind = leadWS(l);
+        return ind + a + ' ' + l.slice(ind.length) + ' ' + b;
+      });
+    }
+  }
+  function duplicate() {
+    const { v, s, e, ls, le } = selLines();
+    const block = v.slice(ls, le);
+    replaceRange(le, le, '\n' + block, s + block.length + 1, e + block.length + 1);
+  }
+  function moveLine(dir) {
+    const { v, s, e, ls, le } = selLines();
+    const block = v.slice(ls, le);
+    if (dir < 0) {
+      if (ls === 0) return;
+      const pls = lineStart(v, ls - 1), prev = v.slice(pls, ls - 1), d = ls - pls;
+      replaceRange(pls, le, block + '\n' + prev, s - d, e - d);
+    } else {
+      if (le >= v.length) return;
+      const nle = lineEnd(v, le + 1), next = v.slice(le + 1, nle), d = next.length + 1;
+      replaceRange(ls, nle, next + '\n' + block, s + d, e + d);
+    }
+  }
+  function deleteLine() {
+    const { v, ls, le } = selLines();
+    if (le < v.length) replaceRange(ls, le + 1, '', ls);
+    else replaceRange(ls > 0 ? ls - 1 : 0, le, '', ls > 0 ? lineStart(v, ls - 1) : 0);
+  }
+  // Re-indent brace languages by nesting depth. Lines that start inside a string or comment keep their text.
+  function formatDoc() {
+    const L = lang();
+    if (!['javascript', 'c', 'cpp', 'java', 'css'].includes(L.id)) return toast('Format Document works for JavaScript, CSS, C, C++ and Java.');
+    const v = ta.value, re = codeRe(L), prot = [];
+    let blank = '', last = 0, m;
+    re.lastIndex = 0;
+    while ((m = re.exec(v))) {
+      if (!m[0]) { re.lastIndex++; continue; }
+      if (m.groups.com || m.groups.str) {
+        blank += v.slice(last, m.index) + m[0].replace(/[^\n]/g, ' ');
+        prot.push([m.index, re.lastIndex]);
+        last = re.lastIndex;
+      }
+    }
+    blank += v.slice(last);
+    const lines = v.split('\n'), blines = blank.split('\n'), u = unit();
+    let depth = 0, off = 0, pi = 0;
+    const out = lines.map((line, i) => {
+      const ls = off;
+      off += line.length + 1;
+      while (pi < prot.length && prot[pi][1] <= ls) pi++;
+      const inside = pi < prot.length && prot[pi][0] < ls;
+      const bl = blines[i].trim();
+      const opens = (bl.match(/[({[]/g) || []).length, closes = (bl.match(/[)}\]]/g) || []).length;
+      let res;
+      if (inside) res = line;
+      else if (!line.trim()) res = '';
+      else res = u.repeat(Math.max(0, depth - (/^[)}\]]/.test(bl) ? 1 : 0))) + line.trim();
+      depth = Math.max(0, depth + opens - closes);
+      return res;
+    });
+    const text = out.join('\n');
+    if (text === v) return toast('Already formatted');
+    const c = contentXY(ta.selectionStart);
+    const starts = [];
+    for (let i = 0, o = 0; i < out.length; i++) { starts.push(o); o += out[i].length + 1; }
+    const ln = Math.min(c.line, out.length - 1);
+    const col = leadWS(out[ln]).length + Math.max(0, c.col - leadWS(lines[ln] || '').length);
+    replaceRange(0, v.length, text, starts[ln] + Math.min(out[ln].length, col));
+    toast('Document formatted');
+  }
+
+  // ---------- Suggestions ----------
+  const box = $('#suggest'), sgList = $('#sgList');
+  const sg = { open: false, box: false, s: 0, p: 0, list: [], sel: 0, prefix: '', ghost: '' };
+  const RANK = { S: 0, M: 1, T: 1, A: 1, P: 1, K: 2, F: 2, V: 3, W: 4 };
+  const KIND_NAME = { S: 'snippet', M: 'method', T: 'tag', A: 'attribute', P: 'property', K: 'keyword', F: 'function', V: 'value', W: 'variable' };
+
+  function htmlSub(v, p) {
+    const b = v.slice(0, p).toLowerCase();
+    for (const [tag, kind] of [['script', 'javascript'], ['style', 'css']]) {
+      const o = b.lastIndexOf('<' + tag), c = b.lastIndexOf('</' + tag);
+      if (o > c && b.indexOf('>', o) >= 0) return kind;
+    }
+    return null;
+  }
+  function openTag(v, upto) {
+    const re = /<(\/?)([A-Za-z][\w-]*)(?:"[^"]*"|'[^']*'|[^'">])*?(\/?)>/g;
+    const text = v.slice(0, upto), st = [];
+    let m;
+    while ((m = re.exec(text))) {
+      const name = m[2].toLowerCase();
+      if (m[1]) { const i = st.lastIndexOf(name); if (i >= 0) st.length = i; }
+      else if (!m[3] && !VOID.has(name)) st.push(name);
+    }
+    return st[st.length - 1] || null;
+  }
+  function inStrOrComment(v, p, L) {
+    const line = v.slice(lineStart(v, p), p);
+    let q = null;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) { if (c === '\\') i++; else if (c === q) q = null; }
+      else if (c === '"' || c === "'" || (c === '`' && L.backtick)) q = c;
+      else if (L.line && line.startsWith(L.line, i)) return true;
+    }
+    return !!q;
+  }
+  function docWords(v, skip, L) {
+    const re = L.id === 'javascript' ? /[A-Za-z_$][\w$]{2,}/g : L.css ? /-?[A-Za-z_][\w-]{2,}/g : /[A-Za-z_]\w{2,}/g;
+    const text = v.length > 200000 ? v.slice(0, 200000) : v;
+    const set = new Set();
+    let m;
+    while ((m = re.exec(text))) {
+      if (m.index <= skip && re.lastIndex >= skip) continue;
+      set.add(m[0]);
+      if (set.size > 1500) break;
+    }
+    return set;
+  }
+  const listOf = (s, kind, detail) => s.split(' ').filter(Boolean).map((w) =>
+    w.endsWith('()') ? { label: w.slice(0, -2), insert: w.slice(0, -2) + '($0)', kind, detail: 'method' } : { label: w, kind, detail: detail || KIND_NAME[kind] });
+
+  function codeItems(L, v, s) {
+    const items = [];
+    for (const [label, insert, detail] of SNIPS[L.id] || []) items.push({ label, insert, kind: 'S', detail });
+    if (L.kw) L.kw.forEach((w) => items.push({ label: w, kind: 'K', detail: 'keyword' }));
+    if (L.lit) L.lit.forEach((w) => items.push({ label: w, kind: 'V', detail: 'value' }));
+    if (L.bi) L.bi.forEach((w) => items.push({ label: w, insert: L.calls && L.calls.has(w) ? w + '($0)' : w, kind: 'F', detail: 'built-in' }));
+    docWords(v, s, L).forEach((w) => items.push({ label: w, kind: 'W', detail: 'in this file' }));
+    return items;
+  }
+  function memberItems(L, obj, v, s) {
+    const M = MEMBERS[L.id] || {};
+    const last = obj.split('.').pop();
+    const specific = M[obj] || M[last];
+    const items = listOf(specific || M._ || '', 'M');
+    if (!specific) docWords(v, s, L).forEach((w) => items.push({ label: w, kind: 'W', detail: 'in this file' }));
+    return items;
+  }
+  function cssContext(v, s, p, prefix) {
+    const ob = v.lastIndexOf('{', s - 1), cb = v.lastIndexOf('}', s - 1);
+    let inBlock = ob > cb;
+    if (inBlock && /@(media|supports|layer|container)[^{};]*$/.test(v.slice(Math.max(cb, v.lastIndexOf(';', ob - 1), v.lastIndexOf('{', ob - 1)) + 1, ob))) inBlock = false;
+    if (!prefix) return null;
+    if (!inBlock) return { s, prefix, items: SNIPS.css.map(([label, insert, detail]) => ({ label, insert, kind: 'S', detail })).concat(listOf(CSS_TAGS, 'T', 'element')) };
+    const ds = Math.max(v.lastIndexOf(';', s - 1), ob);
+    const decl = v.slice(ds + 1, s);
+    const ci = decl.indexOf(':');
+    if (ci < 0) return { s, prefix, items: CSS_PROPS.split(' ').map((w) => ({ label: w, insert: w + ': $0;', kind: 'P', detail: 'property' })) };
+    const prop = decl.slice(0, ci).trim();
+    return { s, prefix, items: listOf((CSS_VALUES[prop] ? CSS_VALUES[prop] + ' ' : '') + CSS_VALUES._, 'V').concat(listOf('var() calc() rgb() min() max() clamp()', 'F')) };
+  }
+  function htmlContext(v, p) {
+    let s = p;
+    while (s > 0 && /[\w-]/.test(v[s - 1])) s--;
+    const prefix = v.slice(s, p);
+    const lt = v.lastIndexOf('<', p - 1), gt = v.lastIndexOf('>', p - 1);
+    const tagItems = () => [{ label: 'html5', insert: HTML5, kind: 'S', detail: 'page starter' }]
+      .concat(Object.keys(HTML_TAGS).map((t) => ({ label: t, insert: HTML_TAGS[t], kind: 'T', detail: 'element' })));
+    if (lt > gt) {
+      const inside = v.slice(lt, p);
+      if (/^<[A-Za-z][\w-]*$/.test(inside) || inside === '<') return { s, prefix, items: tagItems(), allowEmpty: true };
+      if (/^<\/[\w-]*$/.test(inside)) {
+        const t = openTag(v, lt);
+        return t ? { s: lt, prefix, items: [{ label: t, insert: '</' + t + '>', kind: 'T', detail: 'close tag', keepStart: true }], allowEmpty: true } : null;
+      }
+      if (!prefix || !/\s/.test(v[s - 1] || '')) return null;
+      if ((inside.split('"').length - 1) % 2 || (inside.split("'").length - 1) % 2) return null;
+      return { s, prefix, items: HTML_ATTRS.split(' ').map((a) => ({ label: a, insert: a + '="$0"', kind: 'A', detail: 'attribute' })) };
+    }
+    if (!prefix || !/(^|>)\s*$/.test(v.slice(lineStart(v, s), s))) return null;
+    return { s, prefix, items: tagItems() };
+  }
+  function suggestContext(force) {
+    const v = ta.value, p = ta.selectionStart;
+    if (p !== ta.selectionEnd) return null;
+    let L = lang();
+    if (L.id === 'text') return null;
+    if (L.id === 'html') {
+      const sub = htmlSub(v, p);
+      if (!sub) return htmlContext(v, p);
+      L = LANGS[sub];
+    }
+    const wre = L.css ? /[\w-]/ : L.id === 'javascript' ? /[\w$]/ : /\w/;
+    let s = p;
+    while (s > 0 && wre.test(v[s - 1])) s--;
+    if (L.css && v[s - 1] === '@') s--;
+    const prefix = v.slice(s, p);
+    if (/^\d/.test(prefix)) return null;
+    if (inStrOrComment(v, s, L)) return null;
+    if (L.css) return cssContext(v, s, p, prefix);
+    if (v[s - 1] === '.' && /[\w$)\]"']/.test(v[s - 2] || '')) {
+      const m = /([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)$/.exec(v.slice(Math.max(0, s - 80), s - 1));
+      return { s, prefix, items: memberItems(L, m ? m[1] : '', v, s), allowEmpty: true };
+    }
+    if (!prefix && !force) return null;
+    return { s, prefix, items: codeItems(L, v, s) };
+  }
+  function score(label, prefix) {
+    if (!prefix) return 1;
+    if (label.startsWith(prefix)) return 3;
+    const ll = label.toLowerCase(), pl = prefix.toLowerCase();
+    if (ll.startsWith(pl)) return 2;
+    if (ll[0] !== pl[0]) return 0;
+    let j = 0;
+    for (let i = 0; i < ll.length && j < pl.length; i++) if (ll[i] === pl[j]) j++;
+    return j === pl.length ? 1 : 0;
+  }
+  function filterItems(items, prefix) {
+    const seen = new Map();
+    for (const it of items) if (!seen.has(it.label)) seen.set(it.label, it);
+    const out = [];
+    for (const it of seen.values()) {
+      const sc = score(it.label, prefix);
+      if (!sc) continue;
+      // A finished word needs no suggestion, so Enter keeps making a new line.
+      if (prefix && it.label === prefix && it.kind !== 'S' && it.kind !== 'T' && !it.keepStart) return [];
+      out.push({ it, sc });
+    }
+    out.sort((a, b) => b.sc - a.sc || RANK[a.it.kind] - RANK[b.it.kind] || a.it.label.length - b.it.label.length || a.it.label.localeCompare(b.it.label));
+    return out.slice(0, 40).map((x) => x.it);
+  }
+  function markMatch(label, prefix) {
+    if (!prefix) return esc(label);
+    if (label.toLowerCase().startsWith(prefix.toLowerCase())) return '<b>' + esc(label.slice(0, prefix.length)) + '</b>' + esc(label.slice(prefix.length));
+    const pl = prefix.toLowerCase();
+    let out = '', j = 0;
+    for (const c of label) {
+      if (j < pl.length && c.toLowerCase() === pl[j]) { out += '<b>' + esc(c) + '</b>'; j++; }
+      else out += esc(c);
+    }
+    return out;
+  }
+  function bodyOf(item, end) {
+    let body = item.insert != null ? item.insert : item.label;
+    if (body.endsWith('($0)') && ta.value[end] === '(') body = body.slice(0, -4) + '$0';
+    return body;
+  }
+  // Placeholders become their text; returns the text plus what to select afterwards.
+  function placeholders(body) {
+    const re = /\$\{(\d+):([^}]*)\}|\$(\d+)/g;
+    let text = '', last = 0, m, best = null;
+    while ((m = re.exec(body))) {
+      text += body.slice(last, m.index);
+      const n = +(m[1] || m[3]), content = m[2] || '';
+      if (!best || (n !== 0 && (best.n === 0 || n < best.n))) best = { n, s: text.length, e: text.length + content.length };
+      text += content;
+      last = re.lastIndex;
+    }
+    text += body.slice(last);
+    return { text, sel: best || { s: text.length, e: text.length } };
+  }
+  function computeGhost() {
+    sg.ghost = '';
+    if (!state.ghost || !sg.open || !sg.prefix) return;
+    const item = sg.list[sg.sel], v = ta.value, p = ta.selectionStart;
+    if (!item || item.keepStart) return;
+    if (!/^[\s)\]}'"`;,]*$/.test(v.slice(p, lineEnd(v, p)))) return;
+    const t = placeholders(bodyOf(item, p)).text;
+    if (!t.startsWith(sg.prefix)) return;
+    const nl = t.indexOf('\n');
+    sg.ghost = (nl < 0 ? t : t.slice(0, nl)).slice(sg.prefix.length) + (nl < 0 ? '' : ' …');
+  }
+  function updateSuggest(canOpen, force) {
+    if (!state.suggest && !state.ghost && !force) return hideSuggest();
+    if (!canOpen && !sg.open) return;
+    const ctx = suggestContext(force);
+    if (!ctx || (!ctx.prefix && !ctx.allowEmpty && !force)) return hideSuggest();
+    const list = filterItems(ctx.items, ctx.prefix);
+    if (!list.length) return hideSuggest();
+    Object.assign(sg, { open: true, box: state.suggest || !!force, s: ctx.s, p: ta.selectionStart, list, prefix: ctx.prefix, sel: 0 });
+    if (sg.box) {
+      sgList.innerHTML = list.map((it, i) =>
+        '<li class="sg-item" role="option" id="sg-' + i + '" data-i="' + i + '" aria-selected="' + (i === 0) + '">' +
+          sgIcon(it.kind) + '<span class="sg-label">' + markMatch(it.label, ctx.prefix) + '</span>' +
+          '<span class="sg-detail">' + esc(it.detail || '') + '</span></li>').join('');
+      box.hidden = false;
+      ta.setAttribute('aria-activedescendant', 'sg-0');
+      sgList.scrollTop = 0;
+      placeSuggest();
+    } else box.hidden = true;
+    computeGhost();
+    scheduleDeco();
+  }
+  function placeSuggest() {
+    const wrap = box.parentElement;
+    const { x, y, lh } = caretXY(sg.s);
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    const bw = box.offsetWidth, bh = box.offsetHeight;
+    const left = Math.max(4, Math.min(x - 26, W - bw - 4));
+    let top = y + lh + 2;
+    if (top + bh > H - 4 && y - bh - 2 >= 0) top = y - bh - 2;
+    box.style.transform = 'translate(' + Math.round(left) + 'px,' + Math.round(Math.max(4, top)) + 'px)';
+  }
+  function hideSuggest() {
+    if (!sg.open && !sg.ghost) return;
+    sg.open = false; sg.box = false; sg.ghost = '';
+    box.hidden = true;
+    ta.removeAttribute('aria-activedescendant');
+    scheduleDeco();
+  }
+  function setSel(i) {
+    const n = sg.list.length;
+    sg.sel = (i + n) % n;
+    sgList.querySelectorAll('.sg-item').forEach((li, k) => li.setAttribute('aria-selected', String(k === sg.sel)));
+    const li = sgList.children[sg.sel];
+    if (li) li.scrollIntoView({ block: 'nearest' });
+    ta.setAttribute('aria-activedescendant', 'sg-' + sg.sel);
+    computeGhost();
+    scheduleDeco();
+  }
+  function accept(item) {
+    const v = ta.value, end = ta.selectionStart;
+    let start = sg.s;
+    let body = bodyOf(item, end);
+    // "<di" + "<div>…" or "#inc" + "#include…": swallow the symbol already typed.
+    if (!item.keepStart && /^[^\w\s$]/.test(body) && v[start - 1] === body[0]) start--;
+    const ind = leadWS(v.slice(lineStart(v, start), start));
+    body = body.replace(/\t/g, unit()).replace(/\n/g, '\n' + ind);
+    const { text, sel } = placeholders(body);
+    hideSuggest();
+    replaceRange(start, end, text, start + sel.s, start + sel.e);
+  }
+  box.addEventListener('mousedown', (e) => e.preventDefault());
+  box.addEventListener('click', (e) => {
+    const li = e.target.closest('.sg-item');
+    if (li && sg.open) accept(sg.list[+li.dataset.i]);
+  });
+  ta.addEventListener('blur', () => { hideSuggest(); setTimeout(fit, 50); });
+  document.addEventListener('selectionchange', () => {
+    if (document.activeElement !== ta) return;
+    scheduleDeco();
+    if (sg.open && !busy && (ta.selectionStart !== sg.p || ta.selectionEnd !== sg.p)) hideSuggest();
+  });
+
+  // ---------- Find / replace ----------
+  const findEl = $('#find'), findIn = $('#findIn'), replIn = $('#replIn'), findCount = $('#findCount');
+  const find = { open: false, matches: [], cur: -1, len: 0 };
+  function openFind(withReplace) {
+    hideSuggest();
+    find.open = true;
+    findEl.hidden = false;
+    findEl.classList.toggle('rep', !!withReplace);
+    const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+    if (sel && !sel.includes('\n')) findIn.value = sel;
+    findIn.focus();
+    findIn.select();
+    runFind();
+  }
+  function closeFind() { find.open = false; findEl.hidden = true; scheduleDeco(); }
+  function runFind(keep) {
+    const q = findIn.value, v = ta.value;
+    find.matches = [];
+    find.len = q.length;
+    if (q) {
+      const lv = v.toLowerCase(), lq = q.toLowerCase();
+      let i = 0;
+      while ((i = lv.indexOf(lq, i)) >= 0 && find.matches.length < 5000) { find.matches.push(i); i += lq.length; }
+    }
+    const n = find.matches.length;
+    if (!keep || find.cur >= n) {
+      const c = ta.selectionStart;
+      find.cur = find.matches.findIndex((m) => m >= c);
+      if (find.cur < 0) find.cur = n ? 0 : -1;
+    }
+    findCount.textContent = n ? (find.cur + 1) + ' of ' + n : q ? 'No results' : '';
+    findCount.classList.toggle('none', !!q && !n);
+    if (!keep && find.cur >= 0) reveal(find.matches[find.cur]);
+    scheduleDeco();
+  }
+  function findStep(d) {
+    const n = find.matches.length;
+    if (!n) return;
+    find.cur = (find.cur + d + n) % n;
+    const p = find.matches[find.cur];
+    ta.setSelectionRange(p, p + find.len);
+    reveal(p);
+    findCount.textContent = (find.cur + 1) + ' of ' + n;
+    scheduleDeco();
+  }
+  function replaceOne() {
+    if (find.cur < 0) return;
+    const p = find.matches[find.cur], r = replIn.value;
+    replaceRange(p, p + find.len, r, p + r.length);
+    const n = find.matches.length;
+    find.cur = n ? Math.max(0, find.matches.findIndex((m) => m >= p + r.length)) : -1;
+    runFind(true);
+    if (find.cur >= 0) reveal(find.matches[find.cur]);
+    replIn.focus();
+  }
+  function replaceAll() {
+    const n = find.matches.length;
+    if (!n) return;
+    const v = ta.value, r = replIn.value;
+    let out = '', last = 0;
+    for (const m of find.matches) { out += v.slice(last, m) + r; last = m + find.len; }
+    out += v.slice(last);
+    replaceRange(0, v.length, out, Math.min(ta.selectionStart, out.length));
+    runFind();
+    replIn.focus();
+    toast('Replaced ' + n + (n === 1 ? ' occurrence' : ' occurrences'));
+  }
+  findIn.addEventListener('input', () => runFind());
+  findIn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); findStep(e.shiftKey ? -1 : 1); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeFind(); ta.focus(); }
+  });
+  replIn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); (e.ctrlKey || e.metaKey) ? replaceAll() : replaceOne(); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeFind(); ta.focus(); }
+  });
+  $('#findNext').addEventListener('click', () => findStep(1));
+  $('#findPrev').addEventListener('click', () => findStep(-1));
+  $('#findClose').addEventListener('click', closeFind);
+  $('#findToggle').addEventListener('click', () => findEl.classList.toggle('rep'));
+  $('#replOne').addEventListener('click', replaceOne);
+  $('#replAll').addEventListener('click', replaceAll);
+
+  // ---------- Problems ----------
+  let diags = [], lintT = 0;
+  function lintSoon() { clearTimeout(lintT); lintT = setTimeout(lint, 350); }
+  function bracketLint(v, L, offset) {
+    const out = [], st = [], re = codeRe(L), O = '([{', C = ')]}';
+    re.lastIndex = 0;
+    let last = 0, m;
+    const walk = (from, to) => {
+      for (let i = from; i < to; i++) {
+        const ch = v[i];
+        if (O.includes(ch)) st.push(i);
+        else if (C.includes(ch)) {
+          const want = O[C.indexOf(ch)];
+          if (!st.length) out.push({ pos: offset + i, len: 1, sev: 'error', msg: "Unexpected '" + ch + "' with nothing to close" });
+          else if (v[st[st.length - 1]] !== want) {
+            const o = st.pop();
+            out.push({ pos: offset + i, len: 1, sev: 'error', msg: "Expected '" + C[O.indexOf(v[o])] + "' to close '" + v[o] + "' from line " + (lineOf(offset + o) + 1) });
+          } else st.pop();
+        }
+      }
+    };
+    while ((m = re.exec(v))) {
+      if (!m[0]) { re.lastIndex++; continue; }
+      if (m.groups.com || m.groups.str) {
+        walk(last, m.index);
+        const t = m[0];
+        if (m.groups.str && !t.startsWith('"""') && !t.startsWith("'''") && (t.length === 1 || t[0] !== t[t.length - 1] || (t.length > 1 && t[t.length - 2] === '\\'))) {
+          out.push({ pos: offset + m.index, len: t.length, sev: 'error', msg: 'Unterminated string' });
+        }
+        last = re.lastIndex;
+      }
+    }
+    walk(last, v.length);
+    for (const o of st.slice(-3)) out.push({ pos: offset + o, len: 1, sev: 'error', msg: "'" + v[o] + "' is never closed" });
+    return out;
+  }
+  function jsLint(code, offset) {
+    if (window.acorn) {
+      try {
+        window.acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'script', allowAwaitOutsideFunction: true, allowReturnOutsideFunction: true, allowHashBang: true });
+        return [];
+      } catch (err) {
+        if (err && typeof err.pos === 'number') {
+          const w = wordAt(code, err.pos);
+          return [{ pos: offset + err.pos, len: w && w.s === err.pos ? w.e - w.s : 1, sev: 'error', msg: String(err.message).replace(/\s*\(\d+:\d+\)$/, '') }];
+        }
+      }
+    }
+    return bracketLint(code, LANGS.javascript, offset);
+  }
+  function pyLint(v) {
+    const out = bracketLint(v, LANGS.python, 0);
+    if (out.length) return out;
+    const lines = v.split('\n'), starts = lineStarts();
+    const strip = (t) => t.replace(/("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/g, '""').replace(/#.*$/, '').trimEnd();
+    const ind = (t) => leadWS(t).replace(/\t/g, '    ').length;
+    let tabs = false, spaces = false;
+    for (let i = 0; i < lines.length; i++) {
+      const raw = lines[i], t = strip(raw);
+      if (!t.trim()) continue;
+      const lw = leadWS(raw);
+      if (lw.includes('\t')) tabs = true; else if (lw) spaces = true;
+      const head = /^\s*(if|elif|else|for|while|def|class|try|except|finally|with)\b/.exec(t);
+      if (!head) continue;
+      const balanced = (t.match(/[([{]/g) || []).length === (t.match(/[)\]}]/g) || []).length;
+      if (balanced && !t.endsWith(':')) {
+        out.push({ pos: starts[i] + raw.trimEnd().length - 1, len: 1, sev: 'error', msg: "Expected ':' at the end of this " + head[1] + ' line' });
+        continue;
+      }
+      if (t.endsWith(':')) {
+        let j = i + 1;
+        while (j < lines.length && !strip(lines[j]).trim()) j++;
+        if (j >= lines.length || ind(lines[j]) <= ind(raw)) {
+          const at = j < lines.length ? j : i;
+          out.push({ pos: starts[at] + leadWS(lines[at]).length, len: Math.max(1, lines[at].trim().length), sev: 'error', msg: 'Expected an indented block after the ' + head[1] + ' on line ' + (i + 1) });
+        }
+      }
+    }
+    if (tabs && spaces) out.push({ pos: 0, len: 1, sev: 'warning', msg: 'This file mixes tabs and spaces for indentation' });
+    return out;
+  }
+  function lint() {
+    const L = lang(), v = ta.value;
+    let out = [];
+    if (L.id === 'javascript') out = jsLint(v, 0);
+    else if (L.id === 'python') out = pyLint(v);
+    else if (L.id === 'html') {
+      const re = /(<script\b[^>]*>)([\s\S]*?)(?:<\/script\s*>|$)/gi;
+      let m;
+      while ((m = re.exec(v))) if (!/\bsrc=/.test(m[1])) out = out.concat(jsLint(m[2], m.index + m[1].length));
+    } else if (L.id !== 'text') out = bracketLint(v, L, 0);
+    diags = out.slice(0, 50);
+    renderProblems();
+    scheduleDeco();
+  }
+  function renderProblems() {
+    const el = $('#problems'), f = cur();
+    if (!diags.length) { el.innerHTML = '<div class="empty-note">No problems have been detected in ' + esc(f.name) + '.</div>'; return; }
+    el.innerHTML = diags.map((d, i) => {
+      const c = contentXY(Math.min(d.pos, ta.value.length));
+      return '<button class="prob ' + d.sev + '" data-diag="' + i + '">' + svg(d.sev) + '<span>' + esc(d.msg) + '</span><span class="where">' + esc(f.name) + ' [Ln ' + (c.line + 1) + ', Col ' + (c.col + 1) + ']</span></button>';
+    }).join('');
+  }
+  $('#problems').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-diag]');
+    if (!b) return;
+    const d = diags[+b.dataset.diag];
+    if (!d) return;
+    ta.focus({ preventScroll: true });
+    ta.setSelectionRange(d.pos, d.pos);
+    reveal(d.pos);
+  });
+
+  // ---------- Typing ----------
+  ta.addEventListener('beforeinput', (e) => {
+    if (busy) return;
+    if (sg.box && (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph')) {
+      e.preventDefault();
+      accept(sg.list[sg.sel]);
+      return;
+    }
+    if (!state.autoClose) return;
+    if (e.inputType === 'deleteContentBackward') {
+      const v = ta.value, s = ta.selectionStart;
+      if (s === ta.selectionEnd && s > 0 && PAIRS[v[s - 1]] && PAIRS[v[s - 1]] === v[s]) {
+        e.preventDefault();
+        replaceRange(s - 1, s + 1, '', s - 1);
+        updateSuggest(false);
+      }
+    }
+  });
+  ta.addEventListener('input', (e) => {
+    if (busy) return;
+    const t = e.inputType || '';
+    if (t === 'insertText' && e.data && e.data.length === 1 && !e.isComposing) onTyped(e.data);
+    else if (t === 'insertLineBreak' || t === 'insertParagraph' || (t === 'insertText' && e.data === '\n')) onEnter();
+    afterEdit();
+    if ((t === 'insertText' && e.data !== '\n') || t === 'insertCompositionText' || t === 'insertReplacementText') updateSuggest(true);
+    else if (t.startsWith('delete')) updateSuggest(false);
+    else hideSuggest();
+  });
+  function onTyped(ch) {
+    const v = ta.value, p = ta.selectionStart;
+    if (p !== ta.selectionEnd) return;
+    if (state.autoClose && CLOSERS.has(ch) && v[p] === ch) return replaceRange(p, p + 1, '', p);
+    if (state.autoClose && PAIRS[ch] && canPair(ch, v, p - 1, p)) return replaceRange(p, p, PAIRS[ch], p);
+    if (ch === '>' && state.autoClose && lang().id === 'html' && !htmlSub(v, p)) {
+      const m = /<([A-Za-z][\w-]*)(?:\s(?:"[^"]*"|'[^']*'|[^'"<>])*)?>$/.exec(v.slice(Math.max(0, p - 400), p));
+      if (m && !VOID.has(m[1].toLowerCase()) && v.slice(p, p + m[1].length + 3).toLowerCase() !== '</' + m[1].toLowerCase() + '>') {
+        return replaceRange(p, p, '</' + m[1] + '>', p);
+      }
+    }
+    if ('}])'.includes(ch)) {
+      const before = v.slice(lineStart(v, p - 1), p - 1);
+      const u = unit();
+      if (before.length >= u.length && /^[ \t]+$/.test(before)) replaceRange(p - 1 - u.length, p - 1, '', p - u.length);
+    }
+  }
+  function onEnter() {
+    const v = ta.value, p = ta.selectionStart;
+    if (p !== ta.selectionEnd || v[p - 1] !== '\n') return;
+    const ls = lineStart(v, p - 1);
+    const prev = v.slice(ls, p - 1);
+    const ind = leadWS(prev);
+    const tail = prev.trimEnd();
+    const last = tail[tail.length - 1];
+    const L = lang();
+    const opens = last === '{' || last === '[' || last === '(' || (L.id === 'python' && last === ':') ||
+      (L.id === 'html' && /<(?!\/)(?!(?:br|img|input|meta|link|hr)\b)[\w-]+[^>]*>$/i.test(tail) && !/<\/[\w-]+>$/.test(tail));
+    const u = unit();
+    const next = v[p];
+    if (opens && next && ((last === '{' && next === '}') || (last === '[' && next === ']') || (last === '(' && next === ')') || (L.id === 'html' && v.slice(p, p + 2) === '</'))) {
+      replaceRange(p, p, ind + u + '\n' + ind, p + ind.length + u.length);
+    } else if (opens) replaceRange(p, p, ind + u);
+    else if (ind) replaceRange(p, p, ind);
+  }
+  ta.addEventListener('keydown', (e) => {
+    if (sg.open) {
+      if (sg.box && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); return setSel(sg.sel + (e.key === 'ArrowDown' ? 1 : -1)); }
+      if ((sg.box && e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) || (e.key === 'Tab' && !e.shiftKey && (sg.box || sg.ghost))) {
+        e.preventDefault();
+        return accept(sg.list[sg.sel]);
+      }
+      if (e.key === 'Escape') { e.preventDefault(); return hideSuggest(); }
+    }
+    const mod = e.ctrlKey || e.metaKey;
+    if (e.key === 'Tab' && !mod) { e.preventDefault(); e.shiftKey ? outdent() : indent(); }
+    else if (mod && e.key === '/') { e.preventDefault(); toggleComment(); }
+    else if (e.altKey && e.shiftKey && e.key === 'ArrowDown') { e.preventDefault(); duplicate(); }
+    else if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); moveLine(e.key === 'ArrowUp' ? -1 : 1); }
+    else if (mod && e.shiftKey && e.key.toLowerCase() === 'k') { e.preventDefault(); deleteLine(); }
+    else if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'f') { e.preventDefault(); formatDoc(); }
+    else if (e.ctrlKey && (e.key === ' ' || e.code === 'Space')) { e.preventDefault(); updateSuggest(true, true); }
+    else if (e.key === 'Escape' && find.open) { e.preventDefault(); closeFind(); }
+  });
+  // Workbench shortcuts work from anywhere.
+  document.addEventListener('keydown', (e) => {
+    if (e.defaultPrevented) return;
+    const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+    const go = (fn) => { e.preventDefault(); fn(); };
+    if (e.key === 'F1' || (mod && e.shiftKey && k === 'p')) go(() => openPalette('>'));
+    else if (mod && !e.shiftKey && k === 'p') go(() => openPalette(''));
+    else if (mod && k === 'g') go(() => openPalette(':'));
+    else if (mod && e.shiftKey && k === 'f') go(() => openDrawer('search'));
+    else if (mod && k === 'f') go(() => openFind(false));
+    else if (mod && k === 'h') go(() => openFind(true));
+    else if (mod && k === 'b') go(() => (drawer.hidden ? openDrawer('explorer') : closeDrawer()));
+    else if (mod && k === ',') go(() => openDrawer('settings'));
+    else if (mod && e.key === 'Enter') go(run);
+    else if (mod && e.key === '`') go(() => togglePanel('terminal'));
+    else if (mod && e.shiftKey && k === 'm') go(() => showPanel('problems'));
+    else if (mod && k === 's') go(() => { commit(); save(); toast('Saved ' + cur().name); });
+  });
+
+  // ---------- Key bar ----------
+  const keybar = $('#keybar'), keyNav = $('#keyNav'), keySym = $('#keySym');
+  const C_KEYS = ['{', '}', '(', ')', ';', '[', ']', '=', '"', "'", '#', '<', '>', '&', '*', '.', ',', '+', '-', '/', '!', '|', '%'];
+  const KEYSETS = {
+    javascript: ['{', '}', '(', ')', ';', '=', '.', '[', ']', "'", '"', '`', '=>', ',', ':', '+', '-', '*', '/', '<', '>', '!', '&', '|', '?', '$'],
+    python: [':', '(', ')', '=', '.', '[', ']', '"', "'", ',', '#', '_', '{', '}', '+', '-', '*', '/', '<', '>', '%', '!'],
+    html: ['<', '>', '/', '=', '"', "'", '!', '-', '{', '}', '(', ')', ';', ':', '.'],
+    css: ['{', '}', ':', ';', '.', '#', '-', '(', ')', '%', ',', '"', "'", '>', '*', '@'],
+    c: C_KEYS, cpp: C_KEYS, java: C_KEYS,
+    text: ['.', ',', '!', '?', "'", '"', '(', ')', '-', ':', ';']
+  };
+  const NAV_KEYS = [['tab', 'Tab', 'Indent or accept suggestion'], ['undo', svg('undo'), 'Undo'], ['redo', svg('redo'), 'Redo'],
+    ['pad', svg('move'), 'Cursor trackpad: drag sideways to move by characters, up or down to move by lines'],
+    ['left', svg('left'), 'Move left'], ['up', svg('up'), 'Move up'], ['down', svg('down'), 'Move down'], ['right', svg('right'), 'Move right']];
+  keyNav.innerHTML = NAV_KEYS.map(([k, t, a]) => '<button class="key fx' + (k === 'pad' ? ' pad' : '') + '" data-fx="' + k + '" aria-label="' + a + '">' + t + '</button>').join('');
+  function renderKeys() {
+    keySym.innerHTML = (KEYSETS[lang().id] || KEYSETS.text).map((k) => '<button class="key" data-k="' + esc(k).replace(/"/g, '&quot;') + '">' + esc(k) + '</button>').join('');
+    keySym.scrollLeft = 0;
+  }
+  function typeKey(k) {
+    const v = ta.value, s = ta.selectionStart, e = ta.selectionEnd;
+    if (s !== e && state.autoClose && PAIRS[k]) return replaceRange(s, e, k + v.slice(s, e) + PAIRS[k], s + 1, e + 1);
+    replaceRange(s, e, k, s + k.length);
+    if (k.length === 1) onTyped(k);
+    updateSuggest(true);
+  }
+  // A short buzz on key bar taps. iPhones have no vibration API, but toggling an iOS 18 switch control gives the same tick.
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  function haptic() {
+    if (!state.haptics) return;
+    try {
+      if (typeof navigator.vibrate === 'function') { navigator.vibrate(10); return; }
+      if (!IOS) return;
+      const label = document.createElement('label');
+      label.style.display = 'none';
+      label.innerHTML = '<input type="checkbox" switch>';
+      document.head.appendChild(label);
+      label.click();
+      label.remove();
+    } catch (e) {}
+  }
+
+  // ---------- Moving the cursor: arrow keys and the trackpad ----------
+  let goal = null;   // the column to come back to while up and down pass through shorter lines
+  function keepVisible(p) {
+    const { x, y } = contentXY(p), lh = lineH(), H = ta.clientHeight, W = ta.clientWidth;
+    if (y < ta.scrollTop + PADT) ta.scrollTop = Math.max(0, y - PADT);
+    else if (y + lh * 2 > ta.scrollTop + H) ta.scrollTop = y + lh * 2 - H;
+    if (x < ta.scrollLeft + 24) ta.scrollLeft = Math.max(0, x - 48);
+    else if (x > ta.scrollLeft + W - 24) ta.scrollLeft = x - W + 48;
+    syncScroll();
+  }
+  function setCaret(p) {
+    if (document.activeElement !== ta) ta.focus({ preventScroll: true });
+    ta.setSelectionRange(p, p);
+    keepVisible(p);
+    scheduleDeco();
+  }
+  function moveH(n) {
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    goal = null;
+    setCaret(s !== e ? (n < 0 ? s : e) : Math.max(0, Math.min(ta.value.length, s + n)));
+  }
+  function moveV(n) {
+    const v = ta.value, a = lineStarts(), from = n < 0 ? ta.selectionStart : ta.selectionEnd, line = lineOf(from);
+    if (!goal || goal.pos !== from) goal = { col: vcol(v, a[line], from) };
+    const t = line + n;
+    let p = t < 0 ? 0 : v.length;
+    if (t >= 0 && t < a.length) {
+      const le = t + 1 < a.length ? a[t + 1] - 1 : v.length;
+      p = a[t];
+      while (p < le && vcol(v, a[t], p + 1) <= goal.col) p++;
+    }
+    goal.pos = p;
+    setCaret(p);
+  }
+  // Up and down walk the suggestion list while it is open.
+  function arrow(fx) {
+    if (sg.box && (fx === 'up' || fx === 'down')) return setSel(sg.sel + (fx === 'down' ? 1 : -1));
+    if (fx === 'left' || fx === 'right') moveH(fx === 'left' ? -1 : 1);
+    else moveV(fx === 'up' ? -1 : 1);
+  }
+  const ARROWS = new Set(['left', 'right', 'up', 'down']);
+  const PAD_X = 8, PAD_Y = 18;   // finger travel in px for one character and for one line
+  let hold = null, pad = null, pressed = null;
+  function release() {
+    if (hold) { clearTimeout(hold.t); hold.b.classList.remove('on'); hold = null; }
+    if (pad) { pad.b.classList.remove('on'); pad = null; }
+  }
+  // Arrows act on touch-down and repeat while held. The trackpad follows the finger.
+  keyNav.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('[data-fx]'), fx = b && b.dataset.fx;
+    if (!fx || e.button > 0 || (fx !== 'pad' && !ARROWS.has(fx))) return;
+    e.preventDefault();
+    release();
+    haptic();
+    pressed = b;
+    try { b.setPointerCapture(e.pointerId); } catch (err) {}
+    b.classList.add('on');
+    if (fx === 'pad') {
+      hideSuggest();
+      if (document.activeElement !== ta) ta.focus({ preventScroll: true });
+      pad = { b, id: e.pointerId, x: e.clientX, y: e.clientY, ax: 0, ay: 0 };
+      return;
+    }
+    arrow(fx);
+    const again = (n) => {
+      if (!hold) return;
+      arrow(fx);
+      hold.t = setTimeout(() => again(n + 1), n < 10 ? 70 : 35);
+    };
+    hold = { b, t: setTimeout(() => again(0), 400) };
+  });
+  keyNav.addEventListener('pointermove', (e) => {
+    if (!pad || e.pointerId !== pad.id) return;
+    pad.ax += e.clientX - pad.x;
+    pad.ay += e.clientY - pad.y;
+    pad.x = e.clientX; pad.y = e.clientY;
+    const ny = Math.trunc(pad.ay / PAD_Y), nx = Math.trunc(pad.ax / PAD_X);
+    // A line change drops sideways drift, and sideways travel bleeds off vertical drift.
+    if (ny) { moveV(ny); pad.ay -= ny * PAD_Y; pad.ax = 0; }
+    else if (nx) { moveH(nx); pad.ax -= nx * PAD_X; pad.ay *= 0.5; }
+  });
+  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) keyNav.addEventListener(t, release);
+  keybar.addEventListener('mousedown', (e) => { if (e.target.closest('button')) e.preventDefault(); });
+  keybar.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const fx = b.dataset.fx;
+    // Arrows and the trackpad already acted on pointerdown; a click with no press before it came from Enter or Space.
+    if (fx === 'pad' || ARROWS.has(fx)) {
+      if (pressed !== b && fx !== 'pad') arrow(fx);
+      pressed = null;
+      return;
+    }
+    haptic();
+    if (b.dataset.k) return typeKey(b.dataset.k);
+    if (fx === 'tab') return sg.open && (sg.box || sg.ghost) ? accept(sg.list[sg.sel]) : indent();
+    if (document.activeElement !== ta) ta.focus({ preventScroll: true });
+    document.execCommand(fx);
+    hideSuggest();
+  });
+
+  // ---------- Panel: problems, terminal, preview ----------
+  const panel = $('#panel'), con = $('#console'), frame = $('#preview');
+  let panelTab = 'terminal';
+  function showPanel(tab) {
+    if (tab === 'preview' && cur().lang !== 'html') tab = 'terminal';
+    panelTab = tab;
+    panel.hidden = false;
+    hideSuggest();
+    $('#ptabPreview').hidden = cur().lang !== 'html';
+    panel.querySelectorAll('.ptab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.ptab === tab)));
+    $('#problems').hidden = tab !== 'problems';
+    con.hidden = tab !== 'terminal';
+    frame.hidden = tab !== 'preview';
+    $('#panelClear').hidden = tab !== 'terminal';
+    if (tab === 'terminal' && !con.childNodes.length) termPrompt(true);
+    if (tab === 'problems') renderProblems();
+  }
+  function hidePanel() { panel.hidden = true; frame.srcdoc = ''; }
+  function togglePanel(tab) { if (!panel.hidden && panelTab === tab) hidePanel(); else showPanel(tab); }
+  panel.querySelector('.ptabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ptab]');
+    if (!b) return;
+    if (b.dataset.ptab === 'preview') { commit(); frame.srcdoc = ta.value; }
+    showPanel(b.dataset.ptab);
+  });
+  $('#panelClose').addEventListener('click', hidePanel);
+  $('#panelClear').addEventListener('click', () => { con.textContent = ''; termPrompt(true); });
+  $('#panelSize').addEventListener('click', () => {
+    panel.classList.toggle('tall');
+    $('#panelSize').innerHTML = svg(panel.classList.contains('tall') ? 'down' : 'up');
+  });
+  $('#layoutBtn').addEventListener('click', () => togglePanel(panelTab === 'preview' ? 'terminal' : panelTab));
+  $('#sbProblems').addEventListener('click', () => togglePanel('problems'));
+
+  function logLine(type, text) {
+    const idle = con.querySelector('.cmd.idle');
+    if (idle) idle.remove();
+    const d = document.createElement('div');
+    d.className = 'ln ' + type;
+    text = String(text);
+    d.textContent = text.endsWith('\n') ? text + '\u200b' : text;
+    con.appendChild(d);
+    while (con.childElementCount > 3000) con.firstChild.remove();
+    con.scrollTop = con.scrollHeight;
+    return d;
+  }
+  function termPrompt(idle, cmd) {
+    const old = con.querySelector('.cmd.idle');
+    if (old) old.remove();
+    const d = document.createElement('div');
+    d.className = 'ln cmd' + (idle ? ' idle' : '');
+    d.innerHTML = '<span class="pr">code-pad</span> <span class="ar">❯</span> ' + (idle ? '<span class="blk"></span>' : esc(cmd));
+    con.appendChild(d);
+    con.scrollTop = con.scrollHeight;
+  }
+  function workerMain() {
+    const fmt = (v, d) => {
+      d = d || 0;
+      if (typeof v === 'string') return d ? JSON.stringify(v) : v;
+      if (typeof v === 'function') return 'ƒ ' + (v.name || 'anonymous') + '()';
+      if (typeof v === 'bigint') return v + 'n';
+      if (typeof v === 'symbol') return v.toString();
+      if (v === null || typeof v !== 'object') return String(v);
+      if (v instanceof Error) return v.name + ': ' + v.message;
+      if (d > 2) return Array.isArray(v) ? '[…]' : '{…}';
+      if (Array.isArray(v)) return '[' + v.map((x) => fmt(x, d + 1)).join(', ') + ']';
+      if (v instanceof Map) return 'Map(' + v.size + ') {' + [...v].map(([k, x]) => fmt(k, d + 1) + ' => ' + fmt(x, d + 1)).join(', ') + '}';
+      if (v instanceof Set) return 'Set(' + v.size + ') {' + [...v].map((x) => fmt(x, d + 1)).join(', ') + '}';
+      if (v instanceof Date) return v.toISOString();
+      const name = v.constructor && v.constructor.name && v.constructor.name !== 'Object' ? v.constructor.name + ' ' : '';
+      const ks = Object.keys(v);
+      return name + (ks.length ? '{ ' + ks.map((k) => k + ': ' + fmt(v[k], d + 1)).join(', ') + ' }' : '{}');
+    };
+    const send = (t, a) => postMessage({ t, m: a.map((x) => fmt(x)).join(' ') });
+    console.log = console.info = console.debug = console.table = (...a) => send('log', a);
+    console.warn = (...a) => send('warn', a);
+    console.error = (...a) => send('error', a);
+    self.alert = (m) => send('log', [String(m)]);
+    const where = (err) => {
+      const m = /<anonymous>:(\d+):\d+/.exec((err && err.stack) || '');
+      return m && +m[1] > 2 ? ' (line ' + (m[1] - 2) + ')' : '';
+    };
+    self.onerror = (msg) => { postMessage({ t: 'error', m: String(msg) }); return true; };
+    self.onunhandledrejection = (e) => postMessage({ t: 'error', m: 'Uncaught (in promise) ' + fmt(e.reason) + where(e.reason) });
+    onmessage = async (e) => {
+      const t0 = performance.now();
+      try {
+        const AsyncFn = (async () => {}).constructor;
+        await new AsyncFn(e.data)();
+        postMessage({ t: 'done', ms: performance.now() - t0 });
+      } catch (err) {
+        postMessage({ t: 'error', m: (err && err.name ? err.name + ': ' + err.message : String(err)) + where(err) });
+        postMessage({ t: 'done', ms: performance.now() - t0, failed: true });
+      }
+    };
+  }
+  let worker = null, killT = 0, lines = 0;
+  const fmtMs = (ms) => (ms < 1 ? '<1 ms' : ms < 1000 ? Math.round(ms) + ' ms' : (ms / 1000).toFixed(2) + ' s');
+  function finish(failed, ms) {
+    if (!lines) logLine('meta', '(no output)');
+    logLine('meta', failed ? 'Exited with an error' : 'Done in ' + fmtMs(ms));
+    termPrompt(true);
+  }
+  function runJS(code) {
+    lines = 0;
+    if (worker) worker.terminate();
+    clearTimeout(killT);
+    let w;
+    try {
+      w = new Worker(URL.createObjectURL(new Blob(['(' + workerMain.toString() + ')()'], { type: 'text/javascript' })));
+    } catch (err) { return runInline(code); }
+    worker = w;
+    let finished = false, heard = false;
+    w.onmessage = ({ data: d }) => {
+      heard = true;
+      if (d.t === 'done') {
+        finished = true;
+        finish(d.failed, d.ms);
+        clearTimeout(killT);
+        killT = setTimeout(() => w.terminate(), 4000);
+      } else { lines++; logLine(d.t, d.m); }
+    };
+    w.onerror = (e) => {
+      e.preventDefault();
+      if (!heard) { w.terminate(); runInline(code); }
+      else logLine('error', e.message);
+    };
+    killT = setTimeout(() => {
+      if (!finished) { w.terminate(); logLine('error', 'Stopped after 5 seconds. Look for a loop that never ends.'); termPrompt(true); }
+    }, 5000);
+    w.postMessage(code);
+  }
+  async function runInline(code) {
+    lines = 0;
+    const orig = {};
+    const kinds = { log: 'log', info: 'log', debug: 'log', warn: 'warn', error: 'error' };
+    const show = (v) => (typeof v === 'string' ? v : (() => { try { return JSON.stringify(v); } catch (e) { return String(v); } })());
+    for (const k in kinds) { orig[k] = console[k]; console[k] = (...a) => { lines++; logLine(kinds[k], a.map(show).join(' ')); }; }
+    const t0 = performance.now();
+    try {
+      await new (async () => {}).constructor(code)();
+      finish(false, performance.now() - t0);
+    } catch (err) {
+      logLine('error', err && err.name ? err.name + ': ' + err.message : String(err));
+      finish(true, 0);
+    } finally {
+      setTimeout(() => { for (const k in orig) console[k] = orig[k]; }, 3000);
+    }
+  }
+  // ---------- Python ----------
+  // Pyodide runs in its own worker. It loads once and stays loaded, so only the first run waits for the download.
+  const PY_URL = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+  function pyWorkerMain(BASE) {
+    let q = [], kind = 'log', qT = 0, qLen = 0, sent = 0, capped = false;
+    const flush = () => {
+      if (q.length) postMessage({ t: kind, m: q.join('\n') });
+      q = []; qLen = 0; qT = performance.now();
+    };
+    // Output leaves in small batches: a fast loop can't flood the page, and a slow program still prints as it goes.
+    const out = (k) => (s) => {
+      if (capped) return;
+      if ((sent += s.length + 1) > 1e6) { capped = true; flush(); postMessage({ t: 'meta', m: '… output stopped here: over 1 MB printed' }); return; }
+      if (k !== kind) { flush(); kind = k; }
+      q.push(s); qLen += s.length;
+      if (performance.now() - qT > 40 || qLen > 65536) flush();
+    };
+    const ready = (async () => {
+      const t0 = performance.now();
+      importScripts(BASE + 'pyodide.js');
+      const py = await loadPyodide({ indexURL: BASE });
+      py.setStdout({ batched: out('log') });
+      py.setStderr({ batched: out('error') });
+      // The terminal can't take typing, so input() stops with an error the page turns into advice.
+      py.runPython([
+        'import builtins, sys',
+        'class InputNotAvailable(Exception):',
+        '    pass',
+        'def input(prompt=""):',
+        '    if prompt:',
+        '        print(prompt)',
+        '    raise InputNotAvailable("input() cannot read typing in Code Pad")',
+        'builtins.input = input'
+      ].join('\n'), { filename: '<codepad>' });
+      postMessage({ t: 'ready', ms: performance.now() - t0, v: py.runPython('sys.version.split()[0]') });
+      return py;
+    })();
+    ready.catch(() => {});
+    let latest = null;
+    onmessage = async (e) => {
+      const job = latest = e.data;
+      let py;
+      try { py = await ready; } catch (err) {
+        if (job === latest) postMessage({ t: 'fatal', m: String((err && err.message) || err) });
+        return;
+      }
+      if (job !== latest) return;
+      try {
+        await py.loadPackagesFromImports(job.code, {
+          messageCallback: (m) => postMessage({ t: 'meta', m }),
+          errorCallback: (m) => postMessage({ t: 'warn', m })
+        });
+      } catch (err) {}
+      sent = 0; capped = false; qT = 0;
+      postMessage({ t: 'start' });
+      const t0 = performance.now(), ns = py.globals.get('dict')();
+      ns.set('__name__', '__main__');
+      let failed = null;
+      try { await py.runPythonAsync(job.code, { globals: ns, filename: job.name }); } catch (err) { failed = err; }
+      try { py.runPython('sys.stdout.flush()\nsys.stderr.flush()'); } catch (err) {}
+      flush();
+      ns.destroy();
+      if (failed) postMessage({ t: 'pyerr', type: failed.type || '', m: String(failed.message || failed) });
+      postMessage({ t: 'done', ms: performance.now() - t0, failed: !!failed });
+    };
+  }
+  const py = { w: null, ready: false, busy: false, job: null, loadLn: null, killT: 0 };
+  let runSeq = 0;
+  function pyStop() {
+    clearTimeout(py.killT);
+    if (py.w) py.w.terminate();
+    Object.assign(py, { w: null, ready: false, busy: false });
+  }
+  function runPy(code, name) {
+    lines = 0;
+    if (!py.w) {
+      let w;
+      try {
+        w = new Worker(URL.createObjectURL(new Blob(['(' + pyWorkerMain.toString() + ')(' + JSON.stringify(PY_URL) + ')'], { type: 'text/javascript' })));
+      } catch (err) { logLine('error', 'This browser could not start Python.'); return termPrompt(true); }
+      py.w = w;
+      w.onmessage = (e) => { if (py.w === w) onPy(e.data); };
+      w.onerror = (e) => {
+        e.preventDefault();
+        if (py.w !== w) return;
+        const live = py.job && py.job.seq === runSeq;
+        pyStop();
+        if (live) { logLine('error', 'Python stopped: ' + (e.message || 'unknown error')); termPrompt(true); }
+      };
+    }
+    py.job = { code, name, seq: runSeq };
+    py.busy = true;
+    py.loadLn = py.ready ? null : logLine('meta', 'Loading Python…');
+    py.w.postMessage({ code, name });
+  }
+  function onPy(d) {
+    const live = py.job && py.job.seq === runSeq;
+    if (d.t === 'ready') {
+      py.ready = true;
+      if (py.loadLn && live) py.loadLn.textContent = 'Python ' + d.v + ' loaded in ' + fmtMs(d.ms);
+      keepPython();
+    } else if (d.t === 'start') {
+      clearTimeout(py.killT);
+      py.killT = setTimeout(() => {
+        pyStop();
+        if (py.job && py.job.seq === runSeq) { logLine('error', 'Stopped after 5 seconds. Look for a loop that never ends.'); termPrompt(true); }
+      }, 5000);
+    } else if (d.t === 'done') {
+      clearTimeout(py.killT);
+      py.busy = false;
+      if (live) finish(d.failed, d.ms);
+    } else if (d.t === 'fatal') {
+      pyStop();
+      if (!live) return;
+      logLine('error', 'Python could not load: ' + d.m);
+      logLine('meta', 'Python downloads the first time you run it (about 10 MB). Check your connection and run again.');
+      termPrompt(true);
+    } else if (live) {
+      if (d.t === 'pyerr') return pyError(d);
+      if (d.t !== 'meta') lines++;
+      logLine(d.t, d.m);
+    }
+  }
+  // Tracebacks drop Pyodide's own frames so they point only at the file being run.
+  function pyError(d) {
+    const name = py.job.name, text = String(d.m).replace(/\s+$/, '');
+    const own = (f) => f === name || f === '<exec>';
+    lines++;
+    if (d.type === 'InputNotAvailable' || /^InputNotAvailable:/m.test(text)) {
+      const at = [...text.matchAll(/^ {2}File "([^"]*)", line (\d+)/gm)].filter((m) => own(m[1])).map((m) => +m[2]).pop();
+      const m = /(\w+)\s*=\s*(int|float)?\s*\(?\s*input\s*\(/.exec(at ? py.job.code.split('\n')[at - 1] || '' : '');
+      logLine('warn', 'input()' + (at ? ' on line ' + at : '') + ' waits for someone to type, and this terminal can only show output.');
+      logLine('meta', 'To practise, put the value in the code instead, for example: ' + (m ? m[1] + ' = ' + (m[2] ? '5' : '"Ada"') : 'name = "Ada"'));
+      return;
+    }
+    const out = [];
+    let skip = false;
+    for (const l of text.split('\n')) {
+      const f = /^ {2}File "([^"]*)"/.exec(l);
+      if (f) { skip = !own(f[1]); if (!skip) out.push(l.replace('"<exec>"', '"' + name + '"')); }
+      else if (!(skip && /^\s/.test(l))) { skip = false; out.push(l); }
+    }
+    logLine('error', out.join('\n'));
+  }
+  // Fetching Python's files through the service worker once keeps a copy, so Python also runs offline.
+  function keepPython() {
+    if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+    for (const f of ['pyodide.js', 'pyodide.asm.js', 'pyodide.asm.wasm', 'python_stdlib.zip', 'pyodide-lock.json']) fetch(PY_URL + f).catch(() => {});
+  }
+
+  function run() {
+    commit(); save();
+    hideSuggest();
+    // A new run replaces whatever is still running. A Python download in progress carries on for next time.
+    runSeq++;
+    if (worker) { worker.terminate(); worker = null; }
+    clearTimeout(killT);
+    if (py.busy && py.ready) pyStop();
+    const f = cur(), L = LANGS[f.lang];
+    if (f.lang === 'html') { frame.srcdoc = ta.value; showPanel('preview'); return; }
+    showPanel('terminal');
+    if (f.lang === 'javascript') { termPrompt(false, 'node ' + f.name); return runJS(ta.value); }
+    if (f.lang === 'python') { termPrompt(false, 'python ' + f.name); return runPy(ta.value, f.name); }
+    const base = f.name.replace(/\.[^.]+$/, '');
+    const cmd = { python: 'python ' + f.name, c: 'gcc ' + f.name + ' -o ' + base + ' && ./' + base, cpp: 'g++ ' + f.name + ' -o ' + base + ' && ./' + base, java: 'java ' + f.name }[f.lang];
+    termPrompt(false, cmd || 'cat ' + f.name);
+    if (f.lang === 'css') logLine('meta', 'CSS has nothing to run on its own. Put it in a <style> tag inside an HTML file, then run that file to see it.');
+    else if (f.lang === 'text') logLine('meta', 'Plain text files have nothing to run.');
+    else logLine('meta', 'This editor runs JavaScript, Python and HTML. ' + L.label + ' files get suggestions, highlighting and error checks, but the browser cannot execute them. ' +
+      (diags.length ? 'Fix the ' + diags.length + (diags.length === 1 ? ' problem' : ' problems') + ' listed under Problems first.' : 'No problems were found in this file.'));
+    termPrompt(true);
+  }
+  $('#runBtn').addEventListener('click', run);
+
+  // ---------- Files and tabs ----------
+  const tabsEl = $('#tabs');
+  function renderTabs() {
+    state.open = state.open.filter((id) => byId(id));
+    if (!state.open.includes(state.current)) state.open.push(state.current);
+    const single = state.open.length === 1;
+    tabsEl.innerHTML = state.open.map((id) => {
+      const f = byId(id), on = id === state.current;
+      return '<div class="tab" role="tab" tabindex="0" data-tab="' + id + '" aria-selected="' + on + '">' + fileIcon(f.lang) +
+        '<span class="tab-name">' + esc(f.name) + '</span>' +
+        (single ? '<span style="width:6px"></span>' : '<span class="tab-x" role="button" data-close="' + id + '" aria-label="Close ' + esc(f.name) + '">' + svg('close') + '</span>') + '</div>';
+    }).join('');
+    const on = tabsEl.querySelector('[aria-selected="true"]');
+    if (on) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  tabsEl.addEventListener('click', (e) => {
+    const x = e.target.closest('[data-close]');
+    if (x) return closeTab(x.dataset.close);
+    const t = e.target.closest('[data-tab]');
+    if (t && t.dataset.tab !== state.current) openFile(t.dataset.tab);
+  });
+  function closeTab(id) {
+    if (state.open.length < 2) return;
+    const i = state.open.indexOf(id);
+    state.open.splice(i, 1);
+    if (id === state.current) { commit(); state.current = state.open[Math.min(i, state.open.length - 1)]; loadFile(); }
+    else renderTabs();
+    save();
+  }
+  function openFile(id, at) {
+    if (id !== state.current) commit();
+    if (!state.open.includes(id)) state.open.splice(state.open.indexOf(state.current) + 1, 0, id);
+    state.current = id;
+    loadFile(at);
+    save();
+  }
+  function loadFile(at) {
+    const f = cur();
+    state.current = f.id;
+    hideSuggest();
+    ta.value = f.code;
+    lastLines = 0;
+    crumbKey = '';
+    renderKeys();
+    renderTabs();
+    render();
+    const p = at != null ? at : Math.min(f.pos || 0, f.code.length);
+    ta.setSelectionRange(p, p);
+    ta.scrollTop = at != null ? 0 : (f.st || 0);
+    ta.scrollLeft = 0;
+    syncScroll();
+    if (at != null) reveal(at);
+    frame.srcdoc = '';
+    if (!panel.hidden) showPanel(panelTab);
+    if (find.open) runFind(true);
+    lint();
+  }
+  function uniqueName(base, ext) {
+    const names = new Set(state.files.map((f) => f.name));
+    let n = base + '.' + ext, i = 2;
+    while (names.has(n)) n = base + '-' + i++ + '.' + ext;
+    return n;
+  }
+  function newFile(id) {
+    commit();
+    const L = LANGS[id];
+    const f = { id: uid(), name: uniqueName('untitled', L.ext), lang: id, code: '', updated: Date.now() };
+    state.files.unshift(f);
+    openFile(f.id);
+    closeDrawer();
+    renameFile(true);
+  }
+  function setName(f, name) {
+    f.name = name.trim() || 'untitled.' + LANGS[f.lang].ext;
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (f.name.includes('.') && EXT[ext] && EXT[ext] !== f.lang) f.lang = EXT[ext];
+    f.updated = Date.now();
+    commit(); save();
+    loadFile();
+  }
+  function setLang(id) {
+    const f = cur(), L = LANGS[id];
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (f.name.includes('.') && EXT[ext]) f.name = f.name.slice(0, -ext.length) + L.ext;
+    f.lang = id;
+    commit(); save();
+    loadFile();
+  }
+  function deleteFile(id) {
+    const f = byId(id);
+    state.files = state.files.filter((x) => x.id !== id);
+    state.open = state.open.filter((x) => x !== id);
+    if (!state.files.length) state.files.push({ id: uid(), name: 'untitled.js', lang: 'javascript', code: '', updated: Date.now() });
+    if (id === state.current || !byId(state.current)) { state.current = state.open[0] || state.files[0].id; loadFile(); }
+    else renderTabs();
+    save();
+    if (!drawer.hidden) renderFiles();
+    toast('Deleted ' + f.name);
+  }
+  function copyCode() {
+    const text = ta.value;
+    const fallback = () => { closeDrawer(); ta.focus(); ta.select(); toast('Code selected. Use your phone\'s Copy.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast('Copied ' + cur().name), fallback);
+    else fallback();
+  }
+  function resetSamples() {
+    commit();
+    const fresh = seed().files;
+    state.files = fresh.concat(state.files.filter((f) => !fresh.some((s) => s.name === f.name)));
+    state.open = fresh.map((f) => f.id);
+    state.current = fresh[0].id;
+    loadFile(); save(); toast('Sample files restored');
+  }
+  function applyFont() {
+    root.style.setProperty('--fs', state.fontSize + 'px');
+    root.style.setProperty('--lhp', lineH() + 'px');
+  }
+  function setFont(d) {
+    state.fontSize = Math.max(11, Math.min(26, state.fontSize + d));
+    applyFont(); save(); render();
+    $('#fsVal').textContent = state.fontSize;
+  }
+
+  // ---------- Command palette ----------
+  const palEl = $('#palette'), palIn = $('#palIn'), palList = $('#palList'), palHint = $('#palHint'), palScrim = $('#palScrim');
+  const pal = { items: [], sel: 0, opts: null };
+  const kbd = (s) => s ? s.split(' ').map((k) => '<kbd>' + esc(k) + '</kbd>').join('') : '';
+  function commands() {
+    return [
+      ['Run Code', 'Ctrl+Enter', run],
+      ['Go to File…', 'Ctrl+P', () => openPalette('')],
+      ['Go to Line…', 'Ctrl+G', () => openPalette(':')],
+      ['Find', 'Ctrl+F', () => openFind(false)],
+      ['Replace', 'Ctrl+H', () => openFind(true)],
+      ['Format Document', 'Shift+Alt+F', formatDoc],
+      ['Toggle Line Comment', 'Ctrl+/', toggleComment],
+      ['Trigger Suggest', 'Ctrl+Space', () => { ta.focus(); updateSuggest(true, true); }],
+      ['Duplicate Line', 'Shift+Alt+↓', duplicate],
+      ['Move Line Up', 'Alt+↑', () => moveLine(-1)],
+      ['Move Line Down', 'Alt+↓', () => moveLine(1)],
+      ['Delete Line', 'Ctrl+Shift+K', deleteLine],
+      ['New File…', '', pickNewFile],
+      ['Rename File…', '', () => renameFile(false)],
+      ['Delete File', '', () => confirmDelete(state.current)],
+      ['Close Editor', '', () => closeTab(state.current)],
+      ['Change Language Mode', '', pickLanguage],
+      ['Change Indentation', '', pickIndent],
+      ['Color Theme', '', pickTheme],
+      ['Zoom In (larger text)', '', () => setFont(1)],
+      ['Zoom Out (smaller text)', '', () => setFont(-1)],
+      ['Show Explorer', 'Ctrl+B', () => openDrawer('explorer')],
+      ['Search in Files', 'Ctrl+Shift+F', () => openDrawer('search')],
+      ['Open Settings', 'Ctrl+,', () => openDrawer('settings')],
+      ['Toggle Terminal', 'Ctrl+`', () => togglePanel('terminal')],
+      ['Show Problems', 'Ctrl+Shift+M', () => showPanel('problems')],
+      ['Copy File Contents', '', copyCode],
+      ['Restore Sample Files', '', resetSamples]
+    ].map(([label, key, fn]) => ({ label, det: kbd(key), run: fn }));
+  }
+  function fuzzy(label, q) {
+    if (!q) return { ok: true, html: esc(label), sc: 0 };
+    const l = label.toLowerCase(), lq = q.toLowerCase();
+    const at = l.indexOf(lq);
+    if (at >= 0) return { ok: true, sc: at === 0 ? 3 : 2, html: esc(label.slice(0, at)) + '<b>' + esc(label.slice(at, at + q.length)) + '</b>' + esc(label.slice(at + q.length)) };
+    let j = 0, html = '';
+    for (const c of label) {
+      if (j < lq.length && c.toLowerCase() === lq[j]) { html += '<b>' + esc(c) + '</b>'; j++; }
+      else html += esc(c);
+    }
+    return j === lq.length ? { ok: true, sc: 1, html } : { ok: false };
+  }
+  // Main palette: plain text searches files, ">" runs commands, ":" jumps to a line.
+  function mainSource(text) {
+    if (text.startsWith('>')) return { items: commands(), q: text.slice(1).trim(), hint: '' };
+    if (text.startsWith(':')) {
+      const total = lineStarts().length, n = parseInt(text.slice(1), 10);
+      if (n >= 1 && n <= total) return { items: [{ label: 'Go to line ' + n, det: '', run: () => goLine(n) }], q: '', hint: '' };
+      return { items: [], q: '', hint: 'Type a line number between 1 and ' + total + '.' };
+    }
+    const items = state.files.slice().sort((a, b) => b.updated - a.updated).map((f) => ({
+      label: f.name, icon: fileIcon(f.lang), det: esc(LANGS[f.lang].label), run: () => openFile(f.id)
+    }));
+    return { items, q: text.trim(), hint: text ? '' : 'Type to find a file. Start with > for commands or : to go to a line.' };
+  }
+  function openPalette(text, opts) {
+    hideSuggest();
+    pal.opts = opts || { source: mainSource };
+    palIn.value = text;
+    palIn.placeholder = pal.opts.placeholder || 'Search files by name';
+    palEl.hidden = false; palScrim.hidden = false;
+    palIn.focus();
+    if (pal.opts.select) palIn.setSelectionRange(pal.opts.select[0], pal.opts.select[1]);
+    refreshPalette();
+  }
+  function closePalette() { palEl.hidden = true; palScrim.hidden = true; pal.opts = null; }
+  function refreshPalette() {
+    const o = pal.opts;
+    if (!o) return;
+    const src = o.source ? o.source(palIn.value) : { items: o.items || [], q: o.prompt ? '' : palIn.value.trim(), hint: o.hint || '' };
+    const ranked = [];
+    src.items.forEach((it, i) => { const f = fuzzy(it.label, src.q); if (f.ok) ranked.push({ it, f, i }); });
+    if (src.q) ranked.sort((a, b) => b.f.sc - a.f.sc || a.i - b.i);
+    pal.items = ranked.slice(0, 60);
+    pal.sel = 0;
+    palHint.hidden = !src.hint;
+    palHint.textContent = src.hint;
+    palList.innerHTML = pal.items.map(({ it, f }, i) =>
+      '<li class="pal-item" role="option" data-i="' + i + '" aria-selected="' + (i === 0) + '">' + (it.icon || '') +
+        '<span class="lbl">' + f.html + '</span><span class="det">' + (it.det || '') + '</span></li>').join('') +
+      (!pal.items.length && !src.hint && !o.prompt ? '<li class="pal-hint">No matching results</li>' : '');
+  }
+  function palSel(i) {
+    const n = pal.items.length;
+    if (!n) return;
+    pal.sel = (i + n) % n;
+    palList.querySelectorAll('.pal-item').forEach((li, k) => li.setAttribute('aria-selected', String(k === pal.sel)));
+    const li = palList.children[pal.sel];
+    if (li) li.scrollIntoView({ block: 'nearest' });
+  }
+  function palPick(i) {
+    const o = pal.opts;
+    if (o && o.prompt) { const v = palIn.value; closePalette(); return o.onSubmit(v); }
+    const x = pal.items[i];
+    if (!x) return;
+    closePalette();
+    x.it.run();
+  }
+  palIn.addEventListener('input', refreshPalette);
+  palIn.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); palSel(pal.sel + (e.key === 'ArrowDown' ? 1 : -1)); }
+    else if (e.key === 'Enter') { e.preventDefault(); palPick(pal.sel); }
+    else if (e.key === 'Escape') { e.preventDefault(); closePalette(); ta.focus(); }
+  });
+  palList.addEventListener('mousedown', (e) => e.preventDefault());
+  palList.addEventListener('click', (e) => { const li = e.target.closest('.pal-item'); if (li) palPick(+li.dataset.i); });
+  palScrim.addEventListener('click', closePalette);
+  $('#cmdCenter').addEventListener('click', () => openPalette(''));
+  $('#moreBtn').addEventListener('click', () => openPalette('>'));
+  $('#sbPos').addEventListener('click', () => openPalette(':'));
+  $('#sbLang').addEventListener('click', pickLanguage);
+  $('#sbIndent').addEventListener('click', pickIndent);
+
+  function goLine(n) {
+    const p = lineStarts()[n - 1] + leadWS(lineText(n - 1)).length;
+    ta.focus({ preventScroll: true });
+    ta.setSelectionRange(p, p);
+    reveal(p);
+  }
+  function pickList(placeholder, items) { openPalette('', { placeholder, items }); }
+  function pickLanguage() {
+    pickList('Select language mode', Object.values(LANGS).map((L) => ({
+      label: L.label, icon: fileIcon(L.id), det: L.id === cur().lang ? 'current' : '.' + L.ext, run: () => setLang(L.id)
+    })));
+  }
+  function pickNewFile() {
+    pickList('Choose a language for the new file', Object.values(LANGS).map((L) => ({ label: L.label + ' file', icon: fileIcon(L.id), det: '.' + L.ext, run: () => newFile(L.id) })));
+  }
+  function pickIndent() {
+    pickList('Select tab size', [['auto', 'Auto (follow the language)'], ['2', '2 spaces'], ['4', '4 spaces']].map(([v, l]) => ({
+      label: l, det: String(state.indent) === v ? 'current' : '', run: () => { state.indent = v; save(); render(); renderSettings(); }
+    })));
+  }
+  function pickTheme() {
+    pickList('Select color theme', [['system', 'Auto (match the device)'], ['dark', 'Dark'], ['light', 'Light']].map(([v, l]) => ({
+      label: l, det: state.theme === v ? 'current' : '', run: () => { state.theme = v; save(); renderSettings(); }
+    })));
+  }
+  function renameFile(fresh) {
+    const f = cur(), dot = f.name.lastIndexOf('.');
+    openPalette(f.name, {
+      prompt: true, placeholder: 'File name', select: [0, dot > 0 ? dot : f.name.length],
+      hint: fresh ? 'Name the new file, then press Enter. The extension sets the language.' : 'Press Enter to rename. The extension sets the language.',
+      onSubmit: (v) => { setName(f, v); ta.focus(); }
+    });
+  }
+  function confirmDelete(id) {
+    const f = byId(id);
+    pickList('Delete ' + f.name + '? This cannot be undone.', [
+      { label: 'Delete ' + f.name, icon: '<span class="fi" style="color:var(--error)">✕</span>', run: () => deleteFile(f.id) },
+      { label: 'Cancel', run: () => {} }
+    ]);
+  }
+
+  // ---------- Side bar ----------
+  const drawer = $('#drawer'), scrim = $('#scrim');
+  const PANE_TITLES = { explorer: 'Explorer', search: 'Search', settings: 'Settings' };
+  function openDrawer(pane) {
+    commit();
+    hideSuggest();
+    state.pane = pane || state.pane || 'explorer';
+    drawer.hidden = false; scrim.hidden = false;
+    ta.blur();
+    showPane();
+  }
+  function showPane() {
+    const p = state.pane;
+    drawer.querySelectorAll('.act').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.pane === p)));
+    for (const k in PANE_TITLES) $('#pane-' + k).hidden = k !== p;
+    $('#sideTitle').textContent = PANE_TITLES[p];
+    if (p === 'explorer') renderFiles();
+    if (p === 'settings') renderSettings();
+    if (p === 'search') runSearch();
+  }
+  function closeDrawer() { drawer.hidden = true; scrim.hidden = true; }
+  $('#menuBtn').addEventListener('click', () => openDrawer());
+  $('#drawerClose').addEventListener('click', closeDrawer);
+  scrim.addEventListener('click', closeDrawer);
+  drawer.querySelector('.activity').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pane]');
+    if (!b) return;
+    state.pane = b.dataset.pane; save(); showPane();
+    if (state.pane === 'search') $('#searchIn').focus();
+  });
+  const ago = (t) => {
+    const s = (Date.now() - t) / 1000;
+    if (s < 60) return 'now';
+    if (s < 3600) return Math.floor(s / 60) + 'm';
+    if (s < 86400) return Math.floor(s / 3600) + 'h';
+    return new Date(t).toLocaleDateString();
+  };
+  function renderFiles() {
+    const files = state.files.slice().sort((a, b) => a.name.localeCompare(b.name));
+    $('#fileList').innerHTML = files.map((f) =>
+      '<li class="file' + (f.id === state.current ? ' cur' : '') + '">' +
+        '<button class="file-open" data-open="' + f.id + '">' + fileIcon(f.lang) + '<span class="file-name">' + esc(f.name) + '</span>' +
+        '<span class="file-meta">' + ago(f.updated) + '</span></button>' +
+        '<button class="ibtn" data-rename="' + f.id + '" aria-label="Rename ' + esc(f.name) + '">' + svg('pencil') + '</button>' +
+        '<button class="ibtn" data-del="' + f.id + '" aria-label="Delete ' + esc(f.name) + '">' + svg('trash') + '</button>' +
+      '</li>').join('');
+  }
+  $('#fileList').addEventListener('click', (e) => {
+    const t = e.target.closest('button');
+    if (!t) return;
+    if (t.dataset.open) { openFile(t.dataset.open); return closeDrawer(); }
+    if (t.dataset.rename) { if (t.dataset.rename !== state.current) openFile(t.dataset.rename); closeDrawer(); return renameFile(false); }
+    if (t.dataset.del) {
+      if (!t.classList.contains('confirm')) {
+        $('#fileList').querySelectorAll('.confirm').forEach((x) => { x.classList.remove('confirm'); x.innerHTML = svg('trash'); });
+        t.classList.add('confirm'); t.textContent = 'Delete?';
+        return;
+      }
+      deleteFile(t.dataset.del);
+    }
+  });
+  $('#newFileBtn').addEventListener('click', () => { closeDrawer(); pickNewFile(); });
+
+  const searchIn = $('#searchIn');
+  function runSearch() {
+    const q = searchIn.value, out = $('#searchOut');
+    commit();
+    if (!q) { out.innerHTML = '<p class="note">Search the text of every file in code-pad.</p>'; return; }
+    const lq = q.toLowerCase();
+    let html = '', total = 0;
+    for (const f of state.files) {
+      let rows = '', n = 0, off = 0;
+      for (const line of f.code.split('\n')) {
+        const at = line.toLowerCase().indexOf(lq);
+        if (at >= 0 && n < 50) {
+          n++;
+          const from = Math.max(0, at - 18);
+          rows += '<button class="sr-line" data-f="' + f.id + '" data-p="' + (off + at) + '" data-len="' + q.length + '">' + (from ? '…' : '') +
+            esc(line.slice(from, at).trimStart()) + '<mark>' + esc(line.slice(at, at + q.length)) + '</mark>' + esc(line.slice(at + q.length, at + 80)) + '</button>';
+        }
+        off += line.length + 1;
+      }
+      if (n) { total += n; html += '<div class="sr-file">' + svg('chevD') + fileIcon(f.lang) + '<span>' + esc(f.name) + '</span><span class="file-meta"><span class="badge">' + n + '</span></span></div>' + rows; }
+    }
+    out.innerHTML = total ? html : '<p class="note">No results found.</p>';
+  }
+  searchIn.addEventListener('input', runSearch);
+  $('#searchOut').addEventListener('click', (e) => {
+    const b = e.target.closest('.sr-line');
+    if (!b) return;
+    const p = +b.dataset.p;
+    closeDrawer();
+    openFile(b.dataset.f, p);
+    ta.focus({ preventScroll: true });
+    ta.setSelectionRange(p, p + +b.dataset.len);
+    reveal(p);
+  });
+
+  // The phone's status bar and app switcher take the title bar's color.
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  function syncThemeColor() { if (themeMeta) themeMeta.content = getComputedStyle(root).getPropertyValue('--chrome').trim() || '#181818'; }
+  try {
+    const mq = matchMedia('(prefers-color-scheme: light)');
+    if (mq.addEventListener) mq.addEventListener('change', syncThemeColor); else mq.addListener(syncThemeColor);
+  } catch (e) {}
+  function renderSettings() {
+    $('#fsVal').textContent = state.fontSize;
+    $('#indentChips').innerHTML = ['auto', '2', '4'].map((v) => '<button class="chip" data-indent="' + v + '" aria-pressed="' + (String(state.indent) === v) + '">' + (v === 'auto' ? 'Auto' : v) + '</button>').join('');
+    $('#themeChips').innerHTML = [['system', 'Auto'], ['dark', 'Dark'], ['light', 'Light']].map(([v, l]) => '<button class="chip" data-theme-set="' + v + '" aria-pressed="' + (state.theme === v) + '">' + l + '</button>').join('');
+    drawer.querySelectorAll('[data-opt]').forEach((b) => b.setAttribute('aria-checked', String(!!state[b.dataset.opt])));
+    if (state.theme === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', state.theme);
+    syncThemeColor();
+  }
+  $('#pane-settings').addEventListener('click', (e) => {
+    const t = e.target.closest('button');
+    if (!t) return;
+    if (t.dataset.indent) { state.indent = t.dataset.indent; save(); render(); }
+    else if (t.dataset.themeSet) { state.theme = t.dataset.themeSet; save(); }
+    else if (t.dataset.opt) {
+      state[t.dataset.opt] = !state[t.dataset.opt]; save();
+      if (t.dataset.opt === 'bracketColors') render();
+      if (t.dataset.opt === 'haptics' && state.haptics) haptic();
+      scheduleDeco();
+    } else if (t.id === 'fsDown') setFont(-1);
+    else if (t.id === 'fsUp') setFont(1);
+    renderSettings();
+  });
+
+  let toastT = 0;
+  function toast(msg) {
+    const t = $('#toast');
+    $('#toastText').textContent = msg;
+    t.hidden = false;
+    clearTimeout(toastT);
+    toastT = setTimeout(() => { t.hidden = true; }, 2200);
+  }
+
+  // ---------- Fit above the on-screen keyboard ----------
+  const vv = window.visualViewport;
+  function fit() {
+    const h = vv ? vv.height : window.innerHeight;
+    root.style.setProperty('--vv-h', h + 'px');
+    root.style.setProperty('--vv-top', (vv ? vv.offsetTop : 0) + 'px');
+    app.classList.toggle('compact', document.activeElement === ta && h < 560);
+    app.classList.toggle('kb', !!vv && window.innerHeight - h > 120);
+    root.style.setProperty('--toast-b', (keybar.offsetHeight + $('#statusbar').offsetHeight + 8) + 'px');
+    if (sg.box) placeSuggest();
+  }
+  if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+  window.addEventListener('resize', fit);
+  ta.addEventListener('focus', () => { fit(); setTimeout(fit, 250); });
+
+  // ---------- Pinch the editor to change the text size ----------
+  const editorEl = $('.editor');
+  const fingers = (t) => Math.max(1, Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY));
+  // Keeps the text under the fingers in place while the size changes.
+  function zoomTo(size, cx, cy) {
+    const fs = Math.max(11, Math.min(26, Math.round(size)));
+    if (fs === state.fontSize) return;
+    const r = ta.getBoundingClientRect(), x = cx - r.left, y = cy - r.top;
+    const line = (ta.scrollTop + y - PADT) / lineH(), col = (ta.scrollLeft + x - PADL) / charWidth();
+    setFont(fs - state.fontSize);
+    ta.scrollTop = PADT + line * lineH() - y;
+    ta.scrollLeft = PADL + col * charWidth() - x;
+    syncScroll();
+    toast('Text size ' + fs + ' px');
+  }
+  let pinch = null, wheelFs = 0, wheelT = 0;
+  editorEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 2 || e.target.closest('#panel')) return;
+    pinch = { d: fingers(e.touches), fs: state.fontSize };
+    hideSuggest();
+  }, { passive: true });
+  editorEl.addEventListener('touchmove', (e) => {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    const t = e.touches;
+    zoomTo(pinch.fs * fingers(t) / pinch.d, (t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2);
+  }, { passive: false });
+  const endPinch = (e) => { if (e.touches.length < 2) pinch = null; };
+  editorEl.addEventListener('touchend', endPinch);
+  editorEl.addEventListener('touchcancel', endPinch);
+  // Safari zooms the whole page on a pinch unless its gesture events are cancelled.
+  for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(t, (e) => e.preventDefault());
+  // Trackpad pinch, and Ctrl + scroll wheel, on a computer.
+  editorEl.addEventListener('wheel', (e) => {
+    if (!e.ctrlKey || e.target.closest('#panel')) return;
+    e.preventDefault();
+    wheelFs = Math.max(11, Math.min(26, (wheelFs || state.fontSize) * Math.exp(-e.deltaY / 120)));
+    clearTimeout(wheelT);
+    wheelT = setTimeout(() => { wheelFs = 0; }, 400);
+    zoomTo(wheelFs, e.clientX, e.clientY);
+  }, { passive: false });
+
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { commit(); save(); } });
+  window.addEventListener('pagehide', () => { commit(); save(); });
+
+  // JavaScript parser for exact error positions; without it the bracket checker still runs.
+  try {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/acorn@8.11.3/dist/acorn.js';
+    sc.crossOrigin = 'anonymous';
+    sc.async = true;
+    sc.onload = () => lint();
+    document.head.appendChild(sc);
+  } catch (e) {}
+
+  // ---------- Boot ----------
+  document.querySelectorAll('[data-icon]').forEach((el) => el.insertAdjacentHTML('afterbegin', svg(el.dataset.icon)));
+  applyFont();
+  renderSettings();
+  loadFile();
+  fit();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { charWKey = ''; syncScroll(); scheduleDeco(); });
+  // Installed app and offline use.
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+
+</body>
+</html>

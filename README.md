@@ -1,0 +1,60 @@
+# Code Pad
+
+A code editor built for your phone. Write JavaScript, Python and HTML with suggestions, error checks and a key bar made for thumbs, then run your code. Install it to your home screen and it works offline.
+
+It's one HTML file of vanilla JavaScript. No framework, no build step.
+
+## What it does
+
+- **Editor**: syntax highlighting, bracket pair colors, indent guides, autocomplete with snippets, inline errors, find and replace, a command palette, and multiple files in tabs. Files save in your browser automatically.
+- **Runs your code**:
+  - **JavaScript** runs in a Web Worker, with output in the terminal.
+  - **Python** runs for real with [Pyodide](https://pyodide.org) 0.26 (Python 3.12) in a Web Worker. Output streams as your program prints. The first run downloads Python (about 10 MB) and shows "Loading Python…"; after that it's cached and works offline.
+  - **HTML** renders in a sandboxed live preview.
+  - Code that loops forever is stopped after 5 seconds.
+- **Key bar**: two rows above the keyboard.
+  - Top row: Tab, undo, redo, a **cursor trackpad** (drag sideways to move by characters, up or down to move by lines), and ← ↑ ↓ → arrows that repeat while you hold them.
+  - Bottom row: the symbols the current language needs.
+- **Pinch to zoom**: pinch the editor with two fingers to change the text size. The page itself never zooms.
+- **Haptics**: a short vibration on key bar taps. You can turn it off in Settings. It works on Android, and on iPhone with iOS 18 or later.
+- **Installable app**: a web app manifest, icons (including a maskable one) and a service worker. Add it to your home screen and it opens full screen, even with no connection.
+
+## Install it on your phone
+
+- **iPhone (Safari)**: open the site, tap Share, then **Add to Home Screen**.
+- **Android (Chrome)**: open the site, tap the menu, then **Install app** (or **Add to Home screen**).
+
+## Limits
+
+- Python's `input()` can't read typing yet, because the terminal only shows output. Code that calls it gets a friendly message suggesting you put the value in the code instead.
+- C, C++ and Java get highlighting, suggestions and error checks, but the browser can't run them.
+
+## Files
+
+| File | What it is |
+| --- | --- |
+| `index.html` | The whole app: markup, styles and script |
+| `manifest.webmanifest` | App name, colors and icons for installing |
+| `sw.js` | Service worker: caches the app, and the font, parser and Python files after their first download |
+| `icons/` | App icons: 192 and 512 px, a maskable 512 px, the Apple touch icon, and an SVG |
+| `vercel.json` | Static hosting on Vercel, no build |
+
+## Run it locally
+
+Serve the folder over HTTP. The service worker and the workers need a real origin, not `file://`.
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open http://localhost:8000.
+
+## Deploy
+
+It's a static site with no build. On Vercel, import the repository with the **Other** framework preset and leave the build command empty. Each push to `main` then redeploys. To deploy from the command line instead:
+
+```bash
+npx vercel --prod
+```
+
+After changing `index.html`, installed copies update on their next launch. The service worker serves the cached app straight away and fetches the new version in the background.
