@@ -1,13 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
+  "redirects": [
+    { "source": "/", "destination": "/code-pad", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/code-pad", "destination": "/index.html" },
+    { "source": "/code-pad/:path*", "destination": "/:path*" }
+  ],
   "headers": [
     {
-      "source": "/sw.js",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      "source": "/(code-pad/)?sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" },
+        { "key": "Service-Worker-Allowed", "value": "/code-pad" }
+      ]
     },
     {
-      "source": "/manifest.webmanifest",
+      "source": "/(code-pad/)?manifest.webmanifest",
       "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }]
     },
     {

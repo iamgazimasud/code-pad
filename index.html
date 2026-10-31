@@ -3,13 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-<title>Code Pad</title>
-<meta name="description" content="A code editor built for your phone. Write JavaScript, Python and HTML with suggestions and error checks, and run them, even offline.">
+<title>Code Pad — a free code editor that works on your phone</title>
+<meta name="description" content="Write and run code on your phone: JavaScript, Python and HTML, with suggestions, error checks and a cursor trackpad. Free, works offline, nothing to sign up for.">
+<link rel="canonical" href="https://gazimasud.com/code-pad">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Code Pad — a free code editor that works on your phone">
+<meta property="og:description" content="A real code editor built for thumbs. Run JavaScript and Python, preview HTML, and keep working offline. Free, no sign-up.">
+<meta property="og:url" content="https://gazimasud.com/code-pad">
+<meta property="og:image" content="https://gazimasud.com/code-pad/icons/icon-512.png">
 <meta name="theme-color" content="#181818">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<!-- The app lives at /code-pad on gazimasud.com, which serves it from this project, so every URL here is absolute. -->
+<link rel="manifest" href="/code-pad/manifest.webmanifest">
+<link rel="icon" href="/code-pad/icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/code-pad/icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/code-pad/icons/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Code Pad">
@@ -875,6 +882,21 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
       autoClose: true, suggest: true, ghost: true, bracketColors: true, lens: true, haptics: true
     };
   }
+  // The code pad this one replaced at gazimasud.com/code-pad saved under its own key. On the first visit its
+  // files come across, apart from its three sample files left as they were (matched by a hash of their text).
+  const OLD_KEY = 'gm-codepad-v1';
+  const OLD_SAMPLES = new Set([221965597, 503286479, 3909073951]);
+  const hash = (s) => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return h >>> 0; };
+  function oldFiles() {
+    try {
+      const old = JSON.parse(localStorage.getItem(OLD_KEY));
+      return (old && Array.isArray(old.files) ? old.files : [])
+        .filter((f) => f && typeof f.name === 'string' && typeof f.code === 'string' && !OLD_SAMPLES.has(hash(f.code)))
+        .map((f) => ({ id: uid(), name: f.name || 'untitled.txt', lang: LANGS[f.lang] ? f.lang : 'text', code: f.code, updated: +f.updated || Date.now() }))
+        .sort((a, b) => b.updated - a.updated);
+    } catch (e) { return []; }
+  }
+  let imported = 0;
   function loadState() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY));
@@ -886,7 +908,21 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
         return st;
       }
     } catch (e) {}
-    return Object.assign(seed(), { v2: true });
+    const st = Object.assign(seed(), { v2: true });
+    const mine = oldFiles();
+    if (mine.length) {
+      const names = new Set(st.files.map((f) => f.name));
+      for (const f of mine) {
+        const dot = f.name.lastIndexOf('.'), base = dot > 0 ? f.name.slice(0, dot) : f.name, ext = dot > 0 ? f.name.slice(dot) : '';
+        for (let i = 2; names.has(f.name); i++) f.name = base + '-' + i + ext;
+        names.add(f.name);
+      }
+      st.files = mine.concat(st.files);
+      st.current = mine[0].id;
+      st.open = [mine[0].id].concat(st.open);
+      imported = mine.length;
+    }
+    return st;
   }
   let state = loadState();
   let saveT = null;
@@ -2896,8 +2932,9 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   loadFile();
   fit();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { charWKey = ''; syncScroll(); scheduleDeco(); });
-  // Installed app and offline use.
-  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (imported) { save(); toast('Brought over ' + imported + (imported === 1 ? ' file' : ' files') + ' from the old code pad'); }
+  // Installed app and offline use. The scope has no trailing slash so it covers the page at /code-pad itself.
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('/code-pad/sw.js', { scope: '/code-pad' }).catch(() => {});
 })();
 </script>
 

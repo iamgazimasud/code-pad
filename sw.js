@@ -1,8 +1,10 @@
 // Code Pad service worker. The app opens offline, and the libraries it downloads from CDNs
 // (the code font, the JavaScript parser, Python) are kept after the first download.
-const SHELL = 'codepad-shell-v1';
+const SHELL = 'codepad-shell-v2';
 const CDN = 'codepad-cdn-v1';
-const FILES = ['./', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png'];
+// The app's address on every domain that serves it (gazimasud.com/code-pad, and this project's own).
+const APP = '/code-pad';
+const FILES = [APP, APP + '/manifest.webmanifest', APP + '/icons/icon.svg', APP + '/icons/icon-192.png', APP + '/icons/icon-512.png', APP + '/icons/icon-maskable-512.png', APP + '/icons/apple-touch-icon.png'];
 // Versioned URLs that never change once published.
 const IMMUTABLE = ['https://cdn.jsdelivr.net/', 'https://fonts.gstatic.com/'];
 
@@ -22,7 +24,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin === location.origin) {
     if (url.pathname.endsWith('/sw.js')) return;
-    e.respondWith(fresh(e, SHELL, req.mode === 'navigate' ? './' : null));
+    e.respondWith(fresh(e, SHELL, req.mode === 'navigate' ? APP : null));
   } else if (IMMUTABLE.some((p) => req.url.startsWith(p))) {
     e.respondWith(kept(req));
   } else if (url.origin === 'https://fonts.googleapis.com') {
@@ -31,7 +33,7 @@ self.addEventListener('fetch', (e) => {
 });
 
 // The cached copy straight away, refreshed in the background for next time.
-// Pages are all the same app, so every navigation is stored as './'.
+// Pages are all the same app, so every navigation is stored under the app's own address.
 async function fresh(e, name, key) {
   const cache = await caches.open(name);
   const req = e.request;

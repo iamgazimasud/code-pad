@@ -39,19 +39,25 @@ It's one HTML file of vanilla JavaScript. No framework, no build step.
 | `icons/` | App icons: 192 and 512 px, a maskable 512 px, the Apple touch icon, and an SVG |
 | `vercel.json` | Static hosting on Vercel, no build |
 
+## Where it lives
+
+The app's address is **[gazimasud.com/code-pad](https://gazimasud.com/code-pad)**. The website forwards `/code-pad` and everything under it to this project's Vercel deployment (a rewrite in the website's `next.config.ts`), so every URL in the app is absolute and starts with `/code-pad`. This project's own domain serves the app at `/code-pad` too, and its root redirects there (see `vercel.json`).
+
+The first time someone opens it on a phone where they used the old code pad, files they wrote there come across into this one.
+
 ## Run it locally
 
-Serve the folder over HTTP. The service worker and the workers need a real origin, not `file://`.
+The app expects to be served at `/code-pad` over HTTP. The service worker and the workers need a real origin, not `file://`.
 
 ```bash
-python3 -m http.server 8000
+mkdir -p /tmp/site && ln -sfn "$PWD" /tmp/site/code-pad && python3 -m http.server 8000 -d /tmp/site
 ```
 
-Then open http://localhost:8000.
+Then open http://localhost:8000/code-pad/.
 
 ## Deploy
 
-It's a static site with no build. On Vercel, import the repository with the **Other** framework preset and leave the build command empty. Each push to `main` then redeploys. To deploy from the command line instead:
+It's a static site with no build. Each push to `main` redeploys the Vercel project, and gazimasud.com/code-pad shows the new version straight away. To deploy from the command line instead:
 
 ```bash
 npx vercel --prod
