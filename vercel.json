@@ -2,7 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "redirects": [
-    { "source": "/", "destination": "/code-pad", "permanent": false }
+    { "source": "/", "destination": "/code-pad", "permanent": false },
+    { "source": "/code-pad/", "destination": "/code-pad", "permanent": true }
   ],
   "rewrites": [
     { "source": "/code-pad", "destination": "/index.html" },
