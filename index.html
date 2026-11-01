@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Code Pad — a free code editor that works on your phone</title>
-<meta name="description" content="Write and run code on your phone: JavaScript, Python and HTML, with suggestions, error checks and a cursor trackpad. Free, works offline, nothing to sign up for.">
+<meta name="description" content="Write and run code on your phone in an editor laid out like VS Code: JavaScript, Python and HTML, with suggestions and error checks. Free, works offline, nothing to sign up for.">
 <link rel="canonical" href="https://gazimasud.com/code-pad">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Code Pad — a free code editor that works on your phone">
@@ -24,9 +24,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" crossorigin>
 <style>
-/* Layout: desktop-editor workbench squeezed onto a phone. Title bar with command center, editor tabs, breadcrumbs,
-   code surface (gutter + layered text: decorations under, highlighted text, overlays, textarea), bottom panel,
-   blue status bar, symbol key bar over the phone keyboard. Explorer / Search / Settings slide in with an activity bar. */
+/* Layout: the VS Code workbench on a phone. Title bar with command center; activity bar down the left; editor tabs,
+   breadcrumbs and the code surface (gutter + layered text: decorations under, highlighted text, overlays, textarea);
+   bottom panel; blue status bar. Explorer / Search / Settings slide out of the activity bar. With no editor open the
+   editor area shows the Welcome page. Typing uses the phone's own keyboard and nothing else. */
 :root {
   --bg: #1f1f1f; --sidebar: #181818; --chrome: #181818; --tab-active: #1f1f1f; --border: #2b2b2b;
   --fg: #cccccc; --code-fg: #d4d4d4; --muted: #9d9d9d; --dim: #6e7681; --ln-active: #cccccc;
@@ -37,7 +38,7 @@
   --bm-bg: rgba(0, 100, 0, .18); --bm-border: #888888; --find: rgba(234, 92, 0, .33); --find-cur: rgba(158, 106, 3, .85);
   --error: #f14c4c; --warning: #cca700; --error-bg: rgba(241, 76, 76, .1); --warning-bg: rgba(204, 167, 0, .1);
   --ghost: rgba(255, 255, 255, .34); --match: #2aaaff; --shadow: rgba(0, 0, 0, .4); --scrim: rgba(0, 0, 0, .45);
-  --key: #2c2c2c; --key-edge: #0c0c0c; --ig: #3a3a3a;
+  --link: #4daafc; --ig: #3a3a3a;
   --syn-kw: #569cd6; --syn-ctl: #c586c0; --syn-str: #ce9178; --syn-num: #b5cea8; --syn-com: #6a9955; --syn-fn: #dcdcaa;
   --syn-type: #4ec9b0; --syn-var: #9cdcfe; --syn-lit: #569cd6; --syn-tag: #569cd6; --syn-attr: #9cdcfe; --syn-pun: #808080;
   --syn-sel: #d7ba7d; --b0: #ffd700; --b1: #da70d6; --b2: #179fff;
@@ -59,7 +60,7 @@
     --bm-bg: rgba(0, 100, 0, .1); --bm-border: #b9b9b9; --find: rgba(234, 92, 0, .25); --find-cur: rgba(168, 172, 148, .9);
     --error: #e51400; --warning: #bf8803; --error-bg: rgba(229, 20, 0, .07); --warning-bg: rgba(191, 136, 3, .08);
     --ghost: rgba(0, 0, 0, .36); --match: #0066bf; --shadow: rgba(0, 0, 0, .16); --scrim: rgba(0, 0, 0, .25);
-    --key: #ffffff; --key-edge: #c5c5c5; --ig: #d9d9d9;
+    --link: #005fb8; --ig: #d9d9d9;
     --syn-kw: #0000ff; --syn-ctl: #af00db; --syn-str: #a31515; --syn-num: #098658; --syn-com: #008000; --syn-fn: #795e26;
     --syn-type: #267f99; --syn-var: #001080; --syn-lit: #0000ff; --syn-tag: #800000; --syn-attr: #e50000; --syn-pun: #800000;
     --syn-sel: #800000; --b0: #0431fa; --b1: #319331; --b2: #7b3814;
@@ -78,7 +79,7 @@
   --bm-bg: rgba(0, 100, 0, .1); --bm-border: #b9b9b9; --find: rgba(234, 92, 0, .25); --find-cur: rgba(168, 172, 148, .9);
   --error: #e51400; --warning: #bf8803; --error-bg: rgba(229, 20, 0, .07); --warning-bg: rgba(191, 136, 3, .08);
   --ghost: rgba(0, 0, 0, .36); --match: #0066bf; --shadow: rgba(0, 0, 0, .16); --scrim: rgba(0, 0, 0, .25);
-  --key: #ffffff; --key-edge: #c5c5c5; --ig: #d9d9d9;
+  --link: #005fb8; --ig: #d9d9d9;
   --syn-kw: #0000ff; --syn-ctl: #af00db; --syn-str: #a31515; --syn-num: #098658; --syn-com: #008000; --syn-fn: #795e26;
   --syn-type: #267f99; --syn-var: #001080; --syn-lit: #0000ff; --syn-tag: #800000; --syn-attr: #e50000; --syn-pun: #800000;
   --syn-sel: #800000; --b0: #0431fa; --b1: #319331; --b2: #7b3814;
@@ -96,7 +97,7 @@
   --bm-bg: rgba(0, 100, 0, .18); --bm-border: #888888; --find: rgba(234, 92, 0, .33); --find-cur: rgba(158, 106, 3, .85);
   --error: #f14c4c; --warning: #cca700; --error-bg: rgba(241, 76, 76, .1); --warning-bg: rgba(204, 167, 0, .1);
   --ghost: rgba(255, 255, 255, .34); --match: #2aaaff; --shadow: rgba(0, 0, 0, .4); --scrim: rgba(0, 0, 0, .45);
-  --key: #2c2c2c; --key-edge: #0c0c0c; --ig: #3a3a3a;
+  --link: #4daafc; --ig: #3a3a3a;
   --syn-kw: #569cd6; --syn-ctl: #c586c0; --syn-str: #ce9178; --syn-num: #b5cea8; --syn-com: #6a9955; --syn-fn: #dcdcaa;
   --syn-type: #4ec9b0; --syn-var: #9cdcfe; --syn-lit: #569cd6; --syn-tag: #569cd6; --syn-attr: #9cdcfe; --syn-pun: #808080;
   --syn-sel: #d7ba7d; --b0: #ffd700; --b1: #da70d6; --b2: #179fff;
@@ -133,6 +134,8 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   padding: calc(env(safe-area-inset-top, 0px) + 4px) max(6px, env(safe-area-inset-right, 0px)) 4px max(6px, env(safe-area-inset-left, 0px));
   background: var(--chrome); border-bottom: 1px solid var(--border);
 }
+.app-icon { flex: none; width: 34px; height: 34px; display: grid; place-items: center; }
+.app-icon img { width: 18px; height: 18px; }
 .cmd-center {
   flex: 1; min-width: 0; height: 28px; display: flex; align-items: center; justify-content: center; gap: 6px;
   border: 1px solid var(--input-border); border-radius: 6px; background: var(--input); color: var(--muted); font-size: 12.5px;
@@ -218,6 +221,23 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
 .d-lens { white-space: pre; font: italic calc(var(--fs) * .86) var(--font-ui); line-height: var(--lhp); color: var(--error); }
 .d-lens.warning { color: var(--warning); }
 .ghost { white-space: pre; color: var(--ghost); }
+
+/* No editor open: the editor area shows the Welcome page, and everything that belongs to a file steps aside */
+.welcome { position: absolute; inset: 0; z-index: 5; overflow-y: auto; background: var(--bg); }
+.w-in { max-width: 560px; padding: 32px max(24px, env(safe-area-inset-right, 0px)) 40px 24px; }
+.w-title { margin: 0; font: 300 32px/1.2 var(--font-ui); color: var(--fg); }
+.w-tag { margin: 4px 0 30px; font-size: 17px; color: var(--muted); }
+.w-head { margin: 0 0 8px; font: 400 17px var(--font-ui); color: var(--fg); }
+.w-list { list-style: none; margin: 0 0 28px; padding: 0; }
+.w-list li { display: flex; align-items: center; gap: 10px; min-height: 30px; font-size: 13.5px; }
+.wlink { display: inline-flex; align-items: center; gap: 7px; min-width: 0; border: 0; background: none; padding: 3px 0; color: var(--link); text-align: left; }
+.wlink svg { width: 16px; height: 16px; flex: none; }
+.wlink:hover span:last-child { text-decoration: underline; }
+.w-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-det { flex: none; color: var(--muted); font-size: 12.5px; }
+.w-none { color: var(--muted); }
+@media (pointer: coarse) { .w-list li { min-height: 38px; } }
+.app.empty .tabbar, .app.empty .crumbs, .app.empty .gutter, .app.empty .code-wrap, .app.empty .sb-file { display: none !important; }
 
 .t-kw { color: var(--syn-kw); } .t-ctl { color: var(--syn-ctl); } .t-str { color: var(--syn-str); }
 .t-num { color: var(--syn-num); } .t-com { color: var(--syn-com); } .t-fn { color: var(--syn-fn); }
@@ -321,47 +341,29 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
 .statusbar button:hover, .statusbar button:active { background: rgba(255, 255, 255, .12); }
 .statusbar svg { width: 14px; height: 14px; }
 .sb-gap { flex: 1; }
+/* Clear of the iPhone home indicator, except while the keyboard is up and covers it */
+.app:not(.kb) .statusbar { height: calc(24px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
 @media (max-width: 460px) { .sb-wide { display: none !important; } }
 
-/* Key bar over the phone keyboard: editing keys and the cursor trackpad on top, the language's symbols below */
-.keybar {
-  flex: none; display: flex; flex-direction: column; gap: 5px;
-  padding: 5px max(6px, env(safe-area-inset-right, 0px)) 5px max(6px, env(safe-area-inset-left, 0px));
-  background: var(--sidebar); border-top: 1px solid var(--border);
+/* Workbench: the activity bar down the left, the editor group beside it. The side bar slides out over the editor. */
+.workbench { flex: 1; min-height: 0; display: flex; position: relative; --ab: 48px; }
+@media (max-width: 460px) { .workbench { --ab: 44px; } }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.activity {
+  flex: none; width: calc(var(--ab) + env(safe-area-inset-left, 0px)); padding: 4px 0 4px env(safe-area-inset-left, 0px);
+  display: flex; flex-direction: column; align-items: center; background: var(--chrome); border-right: 1px solid var(--border);
 }
-.app:not(.kb) .keybar { padding-bottom: max(5px, env(safe-area-inset-bottom, 0px)); }
-.krow { display: flex; align-items: center; gap: 5px; }
-.krow-sym { overflow-x: auto; scrollbar-width: none; }
-.krow-sym::-webkit-scrollbar { display: none; }
-.key {
-  flex: none; min-width: 36px; height: 36px; padding: 0 8px; border: 0; border-radius: 5px;
-  background: var(--key); box-shadow: 0 1px 0 var(--key-edge); color: var(--code-fg);
-  font: 500 16px var(--font-code); touch-action: manipulation;
-}
-.key.fx { font: 600 12.5px var(--font-ui); color: var(--match); }
-.krow-nav .key { flex: 1 1 36px; min-width: 30px; max-width: 52px; padding: 0; display: grid; place-items: center; touch-action: none; }
-.krow-nav .key svg { width: 18px; height: 18px; }
-.krow-nav .key.pad {
-  flex: 3 1 72px; max-width: 240px; color: var(--muted);
-  background-image: radial-gradient(circle, rgba(128, 128, 128, .34) 1px, transparent 1.4px); background-size: 7px 7px; background-position: center;
-}
-.key:active, .key.on { background-color: var(--list-active); }
-.key.pad.on { box-shadow: inset 0 0 0 1px var(--accent); color: var(--fg); }
-@media (hover: hover) and (pointer: fine) { .keybar { display: none; } }
-
-/* Drawer: activity bar + side bar */
-.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 20; }
-.drawer {
-  position: fixed; top: 0; bottom: 0; left: 0; z-index: 21; width: min(92vw, 380px); display: flex;
-  background: var(--sidebar); border-right: 1px solid var(--border); box-shadow: 4px 0 18px var(--shadow);
-  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-}
-.activity { flex: none; width: 48px; display: flex; flex-direction: column; align-items: center; padding-top: 6px; background: var(--chrome); border-right: 1px solid var(--border); }
-.act { width: 48px; height: 48px; display: grid; place-items: center; border: 0; background: none; color: var(--dim); position: relative; }
+.act { width: var(--ab); height: var(--ab); display: grid; place-items: center; border: 0; background: none; color: var(--dim); position: relative; }
 .act svg { width: 24px; height: 24px; }
-.act[aria-selected="true"] { color: var(--fg); }
+.act:hover, .act[aria-selected="true"] { color: var(--fg); }
 .act[aria-selected="true"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--accent); }
 .act-gap { flex: 1; }
+.scrim { position: absolute; top: 0; bottom: 0; right: 0; left: calc(var(--ab) + env(safe-area-inset-left, 0px)); background: var(--scrim); z-index: 20; }
+.drawer {
+  position: absolute; top: 0; bottom: 0; left: calc(var(--ab) + env(safe-area-inset-left, 0px)); z-index: 21;
+  width: min(320px, calc(100% - var(--ab) - env(safe-area-inset-left, 0px) - 52px)); display: flex;
+  background: var(--sidebar); border-right: 1px solid var(--border); box-shadow: 4px 0 18px var(--shadow);
+}
 .side { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .side-head { flex: none; display: flex; align-items: center; justify-content: space-between; height: 35px; padding: 0 4px 0 18px; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--fg); }
 .pane { flex: 1; min-height: 0; overflow-y: auto; }
@@ -381,6 +383,12 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
 .file.cur .ibtn, .file:hover .ibtn { visibility: visible; }
 .file .ibtn.confirm { visibility: visible; width: auto; padding: 0 8px; background: var(--error); color: #ffffff; font-size: 12px; }
 @media (pointer: coarse) { .file { height: 38px; } }
+.file.new { padding-right: 8px; }
+.file.new input { flex: 1; min-width: 0; height: 24px; padding: 0 4px; border: 1px solid var(--accent); border-radius: 0; background: var(--input); outline: none; font-size: 13px; }
+.file.new input.bad { border-color: var(--error); }
+.new-err { margin: 0 8px 4px 22px; padding: 5px 7px; border: 1px solid var(--error); background: var(--widget); font-size: 12px; line-height: 1.4; }
+.files-empty { margin: 0; padding: 8px 20px 4px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.side-btn { display: block; width: calc(100% - 40px); height: 28px; margin: 8px 20px; border: 0; border-radius: 2px; background: var(--accent); color: var(--accent-fg); font-size: 13px; }
 .side-input { margin: 4px 12px 8px 18px; }
 .side-input input {
   width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--input-border); border-radius: 3px; background: var(--input); outline: none; font-size: 13px;
@@ -420,6 +428,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--accent); border-radius: 3px; background: var(--input); outline: none; font-size: 13.5px;
 }
 .pal-hint { padding: 2px 10px 6px; color: var(--muted); font-size: 12px; list-style: none; }
+.pal-hint.bad { margin: 0 6px 6px; padding: 5px 7px; border: 1px solid var(--error); color: var(--fg); }
 .pal-list { list-style: none; margin: 0; padding: 0 0 6px; max-height: min(52vh, 420px); overflow-y: auto; }
 .pal-item { display: flex; align-items: center; gap: 8px; min-height: 26px; padding: 3px 10px; cursor: pointer; font-size: 13px; }
 .pal-item[aria-selected="true"] { background: var(--list-active); }
@@ -441,11 +450,20 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
 <body>
 <div class="app" id="app">
   <header class="titlebar">
-    <button class="ibtn" id="menuBtn" aria-label="Explorer" data-icon="menu"></button>
+    <span class="app-icon"><img src="/code-pad/icons/icon.svg" alt=""></span>
     <button class="cmd-center" id="cmdCenter" aria-label="Search files and commands" data-icon="search"><span>code-pad</span></button>
     <button class="ibtn" id="layoutBtn" aria-label="Toggle panel" data-icon="panel"></button>
   </header>
 
+  <div class="workbench">
+  <nav class="activity" id="activity" role="tablist" aria-label="Views">
+    <button class="act" data-pane="explorer" aria-label="Explorer" data-icon="files"></button>
+    <button class="act" data-pane="search" aria-label="Search" data-icon="search"></button>
+    <span class="act-gap"></span>
+    <button class="act" data-pane="settings" aria-label="Settings" data-icon="gear"></button>
+  </nav>
+
+  <div class="main">
   <div class="tabbar">
     <div class="tabs" id="tabs" role="tablist" aria-label="Open editors"></div>
     <div class="tab-actions">
@@ -456,6 +474,19 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   <nav class="crumbs" id="crumbs" aria-label="Breadcrumbs"></nav>
 
   <main class="editor">
+    <div class="welcome" id="welcome" hidden>
+      <div class="w-in">
+        <h1 class="w-title">Code Pad</h1>
+        <p class="w-tag">Write code, run it, learn by doing</p>
+        <h2 class="w-head">Start</h2>
+        <ul class="w-list">
+          <li><button class="wlink" id="wNew"><span data-icon="newFile"></span><span>New File…</span></button></li>
+          <li><button class="wlink" id="wOpen"><span data-icon="folder"></span><span>Open File…</span></button></li>
+        </ul>
+        <h2 class="w-head">Recent</h2>
+        <ul class="w-list" id="wRecent"></ul>
+      </div>
+    </div>
     <div class="gutter" id="gutter" aria-hidden="true"><div id="lnText">1</div><div id="lnCur">1</div></div>
     <div class="code-wrap" id="codeWrap">
       <div class="layer" aria-hidden="true"><div class="layer-in" id="under"></div></div>
@@ -504,39 +535,24 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
       </div>
     </section>
   </main>
+  </div>
 
-  <footer class="statusbar" id="statusbar">
-    <button id="sbProblems" aria-label="Show problems"></button>
-    <span class="sb-gap"></span>
-    <button id="sbPos" aria-label="Go to line">Ln 1, Col 1</button>
-    <button id="sbIndent" aria-label="Change indentation">Spaces: 2</button>
-    <span class="sb-wide">UTF-8</span>
-    <span class="sb-wide">LF</span>
-    <button id="sbLang" aria-label="Change language">JavaScript</button>
-  </footer>
-
-  <nav class="keybar" id="keybar" aria-label="Key bar">
-    <div class="krow krow-nav" id="keyNav"></div>
-    <div class="krow krow-sym" id="keySym"></div>
-  </nav>
-</div>
-
-<div class="scrim" id="scrim" hidden></div>
-<aside class="drawer" id="drawer" hidden aria-label="Side bar">
-  <nav class="activity" role="tablist" aria-label="Views">
-    <button class="act" data-pane="explorer" aria-label="Explorer" data-icon="files"></button>
-    <button class="act" data-pane="search" aria-label="Search" data-icon="search"></button>
-    <span class="act-gap"></span>
-    <button class="act" data-pane="settings" aria-label="Settings" data-icon="gear"></button>
-  </nav>
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" hidden aria-label="Side bar">
   <div class="side">
-    <div class="side-head"><span id="sideTitle">Explorer</span><button class="ibtn" id="drawerClose" aria-label="Close side bar" data-icon="close"></button></div>
+    <div class="side-head"><span id="sideTitle">Explorer</span></div>
 
     <div class="pane" id="pane-explorer">
       <div class="sec-head"><span data-icon="chevD"></span><span class="grow">code-pad</span>
-        <button class="ibtn" id="newFileBtn" aria-label="New file" data-icon="newFile"></button>
+        <button class="ibtn" id="newFileBtn" aria-label="New File…" data-icon="newFile"></button>
+        <button class="ibtn" id="openFileBtn" aria-label="Open File…" data-icon="folder"></button>
       </div>
       <ul class="files" id="fileList"></ul>
+      <div id="filesEmpty" hidden>
+        <p class="files-empty">You have no files yet.</p>
+        <button class="side-btn" data-act="new">New File</button>
+        <button class="side-btn" data-act="open">Open File</button>
+      </div>
     </div>
 
     <div class="pane" id="pane-search" hidden>
@@ -559,14 +575,25 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
         <button class="check" role="checkbox" data-opt="bracketColors"><span class="box" data-icon="check"></span>Color matching brackets by nesting depth.</button></div>
       <div class="set"><div class="set-title"><span>Editor: </span>Inline Errors</div>
         <button class="check" role="checkbox" data-opt="lens"><span class="box" data-icon="check"></span>Print error messages at the end of the line that has the problem.</button></div>
-      <div class="set"><div class="set-title"><span>Key Bar: </span>Haptics</div>
-        <button class="check" role="checkbox" data-opt="haptics"><span class="box" data-icon="check"></span>Vibrate briefly when you tap a key in the key bar. Works on Android, and on iPhone with iOS 18 or later.</button></div>
       <div class="set"><div class="set-title"><span>Workbench: </span>Color Theme</div>
         <div class="set-row" id="themeChips"></div></div>
       <p class="note">Files save automatically in this browser on this device. Run executes JavaScript and Python in the terminal and shows HTML in a live preview. Python downloads the first time you run it (about 10 MB), then works offline. C, C++ and Java get suggestions, highlighting and error checks, but the browser can't execute them.</p>
     </div>
   </div>
-</aside>
+  </aside>
+  </div>
+
+  <footer class="statusbar" id="statusbar">
+    <button id="sbProblems" aria-label="Show problems"></button>
+    <span class="sb-gap"></span>
+    <button class="sb-file" id="sbPos" aria-label="Go to line">Ln 1, Col 1</button>
+    <button class="sb-file" id="sbIndent" aria-label="Change indentation">Spaces: 2</button>
+    <span class="sb-file sb-wide">UTF-8</span>
+    <span class="sb-file sb-wide">LF</span>
+    <button class="sb-file" id="sbLang" aria-label="Change language">JavaScript</button>
+  </footer>
+</div>
+<input type="file" id="openIn" multiple hidden accept=".js,.mjs,.py,.html,.htm,.css,.c,.h,.cpp,.cc,.hpp,.java,.txt,.md,text/*">
 
 <div class="pal-scrim" id="palScrim" hidden></div>
 <div class="palette" id="palette" hidden role="dialog" aria-label="Command palette">
@@ -591,7 +618,6 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
 
   // ---------- Icons ----------
   const PATHS = {
-    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
     search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
     panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18"/>',
     play: '<path d="M7 5v14l11-7z"/>',
@@ -602,17 +628,14 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     files: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/>',
     newFile: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     trash: '<path d="M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
     pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     clear: '<path d="M4 20h16M7 16L17 4"/>',
     error: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>',
     warning: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
     check: '<path d="M5 12l5 5 9-10"/>',
-    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
-    left: '<path d="M19 12H5M11 6l-6 6 6 6"/>', right: '<path d="M5 12h14M13 6l6 6-6 6"/>',
-    undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
-    redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
-    move: '<path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>'
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>'
   };
   const svg = (n) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + PATHS[n] + '</svg>';
   // Suggest-widget symbol icons, 16px grid
@@ -684,56 +707,6 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   Object.assign(EXT, { mjs: 'javascript', htm: 'html', h: 'c', hpp: 'cpp', cc: 'cpp', md: 'text' });
   const fileIcon = (langId) => '<span class="fi fi-' + langId + '" aria-hidden="true">' + esc((LANGS[langId] || LANGS.text).icon) + '</span>';
 
-  const SAMPLES = [
-    { name: 'hello.js', lang: 'javascript', code: [
-      '// Tap ▷ to run. Type and watch the suggestions.',
-      'function greet(name) {',
-      '  return `Hello, ${name}!`;',
-      '}',
-      '',
-      "const langs = ['JavaScript', 'Python', 'C'];",
-      'for (const lang of langs) {',
-      '  console.log(greet(lang));',
-      '}',
-      '',
-      'const squares = [1, 2, 3, 4].map(n => n * n);',
-      "console.log('squares:', squares);",
-      ''].join('\n') },
-    { name: 'fizzbuzz.py', lang: 'python', code: [
-      '# FizzBuzz practice. Tap ▷ to run it.',
-      'def fizzbuzz(n):',
-      '    for i in range(1, n + 1):',
-      '        if i % 15 == 0:',
-      '            print("FizzBuzz")',
-      '        elif i % 3 == 0:',
-      '            print("Fizz")',
-      '        elif i % 5 == 0:',
-      '            print("Buzz")',
-      '        else:',
-      '            print(i)',
-      '',
-      'fizzbuzz(15)',
-      ''].join('\n') },
-    { name: 'counter.html', lang: 'html', code: [
-      '<!doctype html>',
-      '<style>',
-      '  body { font-family: sans-serif; padding: 24px; }',
-      '  button { font-size: 20px; padding: 8px 16px; }',
-      '</style>',
-      '',
-      '<h1>Counter</h1>',
-      '<button id="btn">Clicked 0 times</button>',
-      '',
-      '<script>',
-      '  let count = 0;',
-      "  const btn = document.getElementById('btn');",
-      "  btn.addEventListener('click', () => {",
-      '    count++;',
-      '    btn.textContent = `Clicked ${count} times`;',
-      '  });',
-      '<\/script>',
-      ''].join('\n') }
-  ];
 
   // ---------- Suggestion data ----------
   // Snippets: [trigger, body, description]. ${1:text} is selected after inserting, $0 is where the cursor lands otherwise. \t is one indent step.
@@ -875,13 +848,16 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
 
   // ---------- State ----------
   const uid = () => Math.random().toString(36).slice(2, 10);
+  // A first visit opens an empty workspace on the Welcome page. Files only ever exist because you made or opened them.
+  // Inline suggest starts off: it is accepted with Tab, and a phone keyboard has no Tab key.
   function seed() {
-    const files = SAMPLES.map((s, i) => ({ id: uid(), name: s.name, lang: s.lang, code: s.code, updated: Date.now() - i * 60000 }));
     return {
-      files, current: files[0].id, open: files.map((f) => f.id), fontSize: 15, indent: 'auto', theme: 'system', pane: 'explorer',
-      autoClose: true, suggest: true, ghost: true, bracketColors: true, lens: true, haptics: true
+      files: [], current: null, open: [], fontSize: 15, indent: 'auto', theme: 'system', pane: 'explorer',
+      autoClose: true, suggest: true, ghost: false, bracketColors: true, lens: true
     };
   }
+  // Earlier versions put three sample files into every new workspace. Copies nobody edited are removed once.
+  const SAMPLE_HASHES = new Set([3312459831, 3353270956, 3909073951]);
   // The code pad this one replaced at gazimasud.com/code-pad saved under its own key. On the first visit its
   // files come across, apart from its three sample files left as they were (matched by a hash of their text).
   const OLD_KEY = 'gm-codepad-v1';
@@ -900,41 +876,50 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   function loadState() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY));
-      if (s && Array.isArray(s.files) && s.files.length) {
+      if (s && Array.isArray(s.files)) {
         const st = Object.assign(seed(), s);
-        if (!Array.isArray(s.open)) st.open = [st.current];
+        if (!Array.isArray(s.open)) st.open = st.current ? [st.current] : [];
         if (!s.v2 && st.fontSize === 16) st.fontSize = 15;
-        st.v2 = true;
+        if (!s.v3) {
+          st.files = st.files.filter((f) => !SAMPLE_HASHES.has(hash(f.code)));
+          st.ghost = false;
+        }
+        st.v2 = st.v3 = true;
         return st;
       }
     } catch (e) {}
-    const st = Object.assign(seed(), { v2: true });
+    const st = Object.assign(seed(), { v2: true, v3: true });
     const mine = oldFiles();
     if (mine.length) {
-      const names = new Set(st.files.map((f) => f.name));
+      const names = new Set();
       for (const f of mine) {
         const dot = f.name.lastIndexOf('.'), base = dot > 0 ? f.name.slice(0, dot) : f.name, ext = dot > 0 ? f.name.slice(dot) : '';
         for (let i = 2; names.has(f.name); i++) f.name = base + '-' + i + ext;
         names.add(f.name);
       }
-      st.files = mine.concat(st.files);
+      st.files = mine;
       st.current = mine[0].id;
-      st.open = [mine[0].id].concat(st.open);
+      st.open = [mine[0].id];
       imported = mine.length;
     }
     return st;
   }
   let state = loadState();
+  // Tabs and the open editor can only point at files that still exist. No open editor means the Welcome page.
+  state.open = state.open.filter((id) => state.files.some((f) => f.id === id));
+  if (!state.files.some((f) => f.id === state.current)) state.current = state.open[0] || null;
+  delete state.haptics;
   let saveT = null;
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   function saveSoon() { clearTimeout(saveT); saveT = setTimeout(() => { commit(); save(); }, 400); }
   const byId = (id) => state.files.find((f) => f.id === id);
-  const cur = () => byId(state.current) || state.files[0];
-  const lang = () => LANGS[cur().lang] || LANGS.text;
+  const cur = () => byId(state.current) || null;
+  const lang = () => LANGS[(cur() || {}).lang] || LANGS.text;
   const unit = () => ' '.repeat(state.indent === 'auto' ? lang().indent : +state.indent);
   const lineH = () => Math.round(state.fontSize * 1.5);
   function commit() {
     const f = cur();
+    if (!f) return;
     if (f.code !== ta.value) { f.code = ta.value; f.updated = Date.now(); }
     f.pos = ta.selectionStart; f.st = ta.scrollTop;
   }
@@ -1229,6 +1214,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   let crumbKey = '';
   function updateCrumbs(line) {
     const L = lang(), f = cur(), re = DEF[L.id];
+    if (!f) return;
     let sym = null;
     if (re) {
       let minInd = Infinity;
@@ -1675,6 +1661,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   const findEl = $('#find'), findIn = $('#findIn'), replIn = $('#replIn'), findCount = $('#findCount');
   const find = { open: false, matches: [], cur: -1, len: 0 };
   function openFind(withReplace) {
+    if (!cur()) return;
     hideSuggest();
     find.open = true;
     findEl.hidden = false;
@@ -1851,7 +1838,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   }
   function renderProblems() {
     const el = $('#problems'), f = cur();
-    if (!diags.length) { el.innerHTML = '<div class="empty-note">No problems have been detected in ' + esc(f.name) + '.</div>'; return; }
+    if (!diags.length) { el.innerHTML = '<div class="empty-note">No problems have been detected in ' + (f ? esc(f.name) : 'the workspace') + '.</div>'; return; }
     el.innerHTML = diags.map((d, i) => {
       const c = contentXY(Math.min(d.pos, ta.value.length));
       return '<button class="prob ' + d.sev + '" data-diag="' + i + '">' + svg(d.sev) + '<span>' + esc(d.msg) + '</span><span class="where">' + esc(f.name) + ' [Ln ' + (c.line + 1) + ', Col ' + (c.col + 1) + ']</span></button>';
@@ -1965,161 +1952,19 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     else if (mod && e.key === 'Enter') go(run);
     else if (mod && e.key === '`') go(() => togglePanel('terminal'));
     else if (mod && e.shiftKey && k === 'm') go(() => showPanel('problems'));
-    else if (mod && k === 's') go(() => { commit(); save(); toast('Saved ' + cur().name); });
-  });
-
-  // ---------- Key bar ----------
-  const keybar = $('#keybar'), keyNav = $('#keyNav'), keySym = $('#keySym');
-  const C_KEYS = ['{', '}', '(', ')', ';', '[', ']', '=', '"', "'", '#', '<', '>', '&', '*', '.', ',', '+', '-', '/', '!', '|', '%'];
-  const KEYSETS = {
-    javascript: ['{', '}', '(', ')', ';', '=', '.', '[', ']', "'", '"', '`', '=>', ',', ':', '+', '-', '*', '/', '<', '>', '!', '&', '|', '?', '$'],
-    python: [':', '(', ')', '=', '.', '[', ']', '"', "'", ',', '#', '_', '{', '}', '+', '-', '*', '/', '<', '>', '%', '!'],
-    html: ['<', '>', '/', '=', '"', "'", '!', '-', '{', '}', '(', ')', ';', ':', '.'],
-    css: ['{', '}', ':', ';', '.', '#', '-', '(', ')', '%', ',', '"', "'", '>', '*', '@'],
-    c: C_KEYS, cpp: C_KEYS, java: C_KEYS,
-    text: ['.', ',', '!', '?', "'", '"', '(', ')', '-', ':', ';']
-  };
-  const NAV_KEYS = [['tab', 'Tab', 'Indent or accept suggestion'], ['undo', svg('undo'), 'Undo'], ['redo', svg('redo'), 'Redo'],
-    ['pad', svg('move'), 'Cursor trackpad: drag sideways to move by characters, up or down to move by lines'],
-    ['left', svg('left'), 'Move left'], ['up', svg('up'), 'Move up'], ['down', svg('down'), 'Move down'], ['right', svg('right'), 'Move right']];
-  keyNav.innerHTML = NAV_KEYS.map(([k, t, a]) => '<button class="key fx' + (k === 'pad' ? ' pad' : '') + '" data-fx="' + k + '" aria-label="' + a + '">' + t + '</button>').join('');
-  function renderKeys() {
-    keySym.innerHTML = (KEYSETS[lang().id] || KEYSETS.text).map((k) => '<button class="key" data-k="' + esc(k).replace(/"/g, '&quot;') + '">' + esc(k) + '</button>').join('');
-    keySym.scrollLeft = 0;
-  }
-  function typeKey(k) {
-    const v = ta.value, s = ta.selectionStart, e = ta.selectionEnd;
-    if (s !== e && state.autoClose && PAIRS[k]) return replaceRange(s, e, k + v.slice(s, e) + PAIRS[k], s + 1, e + 1);
-    replaceRange(s, e, k, s + k.length);
-    if (k.length === 1) onTyped(k);
-    updateSuggest(true);
-  }
-  // A short buzz on key bar taps. iPhones have no vibration API, but toggling an iOS 18 switch control gives the same tick.
-  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  function haptic() {
-    if (!state.haptics) return;
-    try {
-      if (typeof navigator.vibrate === 'function') { navigator.vibrate(10); return; }
-      if (!IOS) return;
-      const label = document.createElement('label');
-      label.style.display = 'none';
-      label.innerHTML = '<input type="checkbox" switch>';
-      document.head.appendChild(label);
-      label.click();
-      label.remove();
-    } catch (e) {}
-  }
-
-  // ---------- Moving the cursor: arrow keys and the trackpad ----------
-  let goal = null;   // the column to come back to while up and down pass through shorter lines
-  function keepVisible(p) {
-    const { x, y } = contentXY(p), lh = lineH(), H = ta.clientHeight, W = ta.clientWidth;
-    if (y < ta.scrollTop + PADT) ta.scrollTop = Math.max(0, y - PADT);
-    else if (y + lh * 2 > ta.scrollTop + H) ta.scrollTop = y + lh * 2 - H;
-    if (x < ta.scrollLeft + 24) ta.scrollLeft = Math.max(0, x - 48);
-    else if (x > ta.scrollLeft + W - 24) ta.scrollLeft = x - W + 48;
-    syncScroll();
-  }
-  function setCaret(p) {
-    if (document.activeElement !== ta) ta.focus({ preventScroll: true });
-    ta.setSelectionRange(p, p);
-    keepVisible(p);
-    scheduleDeco();
-  }
-  function moveH(n) {
-    const s = ta.selectionStart, e = ta.selectionEnd;
-    goal = null;
-    setCaret(s !== e ? (n < 0 ? s : e) : Math.max(0, Math.min(ta.value.length, s + n)));
-  }
-  function moveV(n) {
-    const v = ta.value, a = lineStarts(), from = n < 0 ? ta.selectionStart : ta.selectionEnd, line = lineOf(from);
-    if (!goal || goal.pos !== from) goal = { col: vcol(v, a[line], from) };
-    const t = line + n;
-    let p = t < 0 ? 0 : v.length;
-    if (t >= 0 && t < a.length) {
-      const le = t + 1 < a.length ? a[t + 1] - 1 : v.length;
-      p = a[t];
-      while (p < le && vcol(v, a[t], p + 1) <= goal.col) p++;
-    }
-    goal.pos = p;
-    setCaret(p);
-  }
-  // Up and down walk the suggestion list while it is open.
-  function arrow(fx) {
-    if (sg.box && (fx === 'up' || fx === 'down')) return setSel(sg.sel + (fx === 'down' ? 1 : -1));
-    if (fx === 'left' || fx === 'right') moveH(fx === 'left' ? -1 : 1);
-    else moveV(fx === 'up' ? -1 : 1);
-  }
-  const ARROWS = new Set(['left', 'right', 'up', 'down']);
-  const PAD_X = 8, PAD_Y = 18;   // finger travel in px for one character and for one line
-  let hold = null, pad = null, pressed = null;
-  function release() {
-    if (hold) { clearTimeout(hold.t); hold.b.classList.remove('on'); hold = null; }
-    if (pad) { pad.b.classList.remove('on'); pad = null; }
-  }
-  // Arrows act on touch-down and repeat while held. The trackpad follows the finger.
-  keyNav.addEventListener('pointerdown', (e) => {
-    const b = e.target.closest('[data-fx]'), fx = b && b.dataset.fx;
-    if (!fx || e.button > 0 || (fx !== 'pad' && !ARROWS.has(fx))) return;
-    e.preventDefault();
-    release();
-    haptic();
-    pressed = b;
-    try { b.setPointerCapture(e.pointerId); } catch (err) {}
-    b.classList.add('on');
-    if (fx === 'pad') {
-      hideSuggest();
-      if (document.activeElement !== ta) ta.focus({ preventScroll: true });
-      pad = { b, id: e.pointerId, x: e.clientX, y: e.clientY, ax: 0, ay: 0 };
-      return;
-    }
-    arrow(fx);
-    const again = (n) => {
-      if (!hold) return;
-      arrow(fx);
-      hold.t = setTimeout(() => again(n + 1), n < 10 ? 70 : 35);
-    };
-    hold = { b, t: setTimeout(() => again(0), 400) };
-  });
-  keyNav.addEventListener('pointermove', (e) => {
-    if (!pad || e.pointerId !== pad.id) return;
-    pad.ax += e.clientX - pad.x;
-    pad.ay += e.clientY - pad.y;
-    pad.x = e.clientX; pad.y = e.clientY;
-    const ny = Math.trunc(pad.ay / PAD_Y), nx = Math.trunc(pad.ax / PAD_X);
-    // A line change drops sideways drift, and sideways travel bleeds off vertical drift.
-    if (ny) { moveV(ny); pad.ay -= ny * PAD_Y; pad.ax = 0; }
-    else if (nx) { moveH(nx); pad.ax -= nx * PAD_X; pad.ay *= 0.5; }
-  });
-  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) keyNav.addEventListener(t, release);
-  keybar.addEventListener('mousedown', (e) => { if (e.target.closest('button')) e.preventDefault(); });
-  keybar.addEventListener('click', (e) => {
-    const b = e.target.closest('button');
-    if (!b) return;
-    const fx = b.dataset.fx;
-    // Arrows and the trackpad already acted on pointerdown; a click with no press before it came from Enter or Space.
-    if (fx === 'pad' || ARROWS.has(fx)) {
-      if (pressed !== b && fx !== 'pad') arrow(fx);
-      pressed = null;
-      return;
-    }
-    haptic();
-    if (b.dataset.k) return typeKey(b.dataset.k);
-    if (fx === 'tab') return sg.open && (sg.box || sg.ghost) ? accept(sg.list[sg.sel]) : indent();
-    if (document.activeElement !== ta) ta.focus({ preventScroll: true });
-    document.execCommand(fx);
-    hideSuggest();
+    else if (mod && k === 's') go(() => { commit(); save(); if (cur()) toast('Saved ' + cur().name); });
   });
 
   // ---------- Panel: problems, terminal, preview ----------
   const panel = $('#panel'), con = $('#console'), frame = $('#preview');
   let panelTab = 'terminal';
   function showPanel(tab) {
-    if (tab === 'preview' && cur().lang !== 'html') tab = 'terminal';
+    const html = !!cur() && cur().lang === 'html';
+    if (tab === 'preview' && !html) tab = 'terminal';
     panelTab = tab;
     panel.hidden = false;
     hideSuggest();
-    $('#ptabPreview').hidden = cur().lang !== 'html';
+    $('#ptabPreview').hidden = !html;
     panel.querySelectorAll('.ptab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.ptab === tab)));
     $('#problems').hidden = tab !== 'problems';
     con.hidden = tab !== 'terminal';
@@ -2411,6 +2256,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   }
 
   function run() {
+    if (!cur()) return toast('Open a file to run it.');
     commit(); save();
     hideSuggest();
     // A new run replaces whatever is still running. A Python download in progress carries on for next time.
@@ -2435,16 +2281,15 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   $('#runBtn').addEventListener('click', run);
 
   // ---------- Files and tabs ----------
-  const tabsEl = $('#tabs');
+  const tabsEl = $('#tabs'), welcome = $('#welcome');
   function renderTabs() {
     state.open = state.open.filter((id) => byId(id));
-    if (!state.open.includes(state.current)) state.open.push(state.current);
-    const single = state.open.length === 1;
+    if (state.current && !state.open.includes(state.current)) state.open.push(state.current);
     tabsEl.innerHTML = state.open.map((id) => {
       const f = byId(id), on = id === state.current;
       return '<div class="tab" role="tab" tabindex="0" data-tab="' + id + '" aria-selected="' + on + '">' + fileIcon(f.lang) +
         '<span class="tab-name">' + esc(f.name) + '</span>' +
-        (single ? '<span style="width:6px"></span>' : '<span class="tab-x" role="button" data-close="' + id + '" aria-label="Close ' + esc(f.name) + '">' + svg('close') + '</span>') + '</div>';
+        '<span class="tab-x" role="button" data-close="' + id + '" aria-label="Close ' + esc(f.name) + '">' + svg('close') + '</span></div>';
     }).join('');
     const on = tabsEl.querySelector('[aria-selected="true"]');
     if (on) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -2455,34 +2300,44 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     const t = e.target.closest('[data-tab]');
     if (t && t.dataset.tab !== state.current) openFile(t.dataset.tab);
   });
+  // Closing the last editor leaves the Welcome page, as in VS Code. The file itself stays in the Explorer.
   function closeTab(id) {
-    if (state.open.length < 2) return;
     const i = state.open.indexOf(id);
+    if (i < 0) return;
+    if (id === state.current) commit();
     state.open.splice(i, 1);
-    if (id === state.current) { commit(); state.current = state.open[Math.min(i, state.open.length - 1)]; loadFile(); }
+    if (id === state.current) { state.current = state.open[Math.min(i, state.open.length - 1)] || null; loadFile(); }
     else renderTabs();
     save();
   }
+  function closeAll() {
+    commit();
+    state.open = [];
+    state.current = null;
+    loadFile(); save();
+  }
   function openFile(id, at) {
     if (id !== state.current) commit();
-    if (!state.open.includes(id)) state.open.splice(state.open.indexOf(state.current) + 1, 0, id);
+    if (!state.open.includes(id)) state.open.splice(state.current ? state.open.indexOf(state.current) + 1 : state.open.length, 0, id);
     state.current = id;
     loadFile(at);
     save();
   }
   function loadFile(at) {
     const f = cur();
-    state.current = f.id;
+    state.current = f ? f.id : null;
     hideSuggest();
-    ta.value = f.code;
+    app.classList.toggle('empty', !f);
+    welcome.hidden = !!f;
+    if (!f) { if (find.open) closeFind(); renderWelcome(); }
+    ta.value = f ? f.code : '';
     lastLines = 0;
     crumbKey = '';
-    renderKeys();
     renderTabs();
     render();
-    const p = at != null ? at : Math.min(f.pos || 0, f.code.length);
+    const p = at != null ? at : f ? Math.min(f.pos || 0, f.code.length) : 0;
     ta.setSelectionRange(p, p);
-    ta.scrollTop = at != null ? 0 : (f.st || 0);
+    ta.scrollTop = at != null || !f ? 0 : (f.st || 0);
     ta.scrollLeft = 0;
     syncScroll();
     if (at != null) reveal(at);
@@ -2491,23 +2346,49 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     if (find.open) runFind(true);
     lint();
   }
-  function uniqueName(base, ext) {
+  const langOf = (name) => EXT[name.includes('.') ? name.split('.').pop().toLowerCase() : ''] || 'text';
+  // The messages VS Code shows under a file name it can't accept. `self` is the file being renamed, if any.
+  function nameError(name, self) {
+    const n = name.trim();
+    if (!n) return 'A file name must be provided.';
+    if (/[\/\\]/.test(n)) return 'Folders are not supported. Use a name without / or \\.';
+    if (state.files.some((f) => f !== self && f.name === n)) return 'A file ' + n + ' already exists. Please choose a different name.';
+    return '';
+  }
+  // Nothing is created until a name has been typed and accepted.
+  function createFile(name, code) {
+    commit();
+    const n = name.trim();
+    const f = { id: uid(), name: n, lang: langOf(n), code: code || '', updated: Date.now() };
+    state.files.unshift(f);
+    openFile(f.id, 0);
+    closeDrawer();
+    if (!code) ta.focus();
+    return f;
+  }
+  function freeName(name) {
     const names = new Set(state.files.map((f) => f.name));
-    let n = base + '.' + ext, i = 2;
-    while (names.has(n)) n = base + '-' + i++ + '.' + ext;
+    const dot = name.lastIndexOf('.'), base = dot > 0 ? name.slice(0, dot) : name, ext = dot > 0 ? name.slice(dot) : '';
+    let n = name;
+    for (let i = 2; names.has(n); i++) n = base + '-' + i + ext;
     return n;
   }
-  function newFile(id) {
-    commit();
-    const L = LANGS[id];
-    const f = { id: uid(), name: uniqueName('untitled', L.ext), lang: id, code: '', updated: Date.now() };
-    state.files.unshift(f);
-    openFile(f.id);
-    closeDrawer();
-    renameFile(true);
-  }
+  // Open File… reads files from the phone or computer into the workspace.
+  const openIn = $('#openIn');
+  openIn.addEventListener('change', async () => {
+    const picked = Array.from(openIn.files || []);
+    openIn.value = '';
+    let last = null, skipped = 0;
+    for (const file of picked) {
+      if (file.size > 2e6) { skipped++; continue; }
+      const code = await file.text();
+      last = createFile(freeName(file.name.slice(0, 120)), code);
+    }
+    if (skipped) toast(skipped + (skipped === 1 ? ' file was' : ' files were') + ' too large to open (2 MB at most).');
+    else if (picked.length > 1 && last) toast('Opened ' + picked.length + ' files');
+  });
   function setName(f, name) {
-    f.name = name.trim() || 'untitled.' + LANGS[f.lang].ext;
+    f.name = name.trim();
     const ext = (f.name.split('.').pop() || '').toLowerCase();
     if (f.name.includes('.') && EXT[ext] && EXT[ext] !== f.lang) f.lang = EXT[ext];
     f.updated = Date.now();
@@ -2526,9 +2407,8 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     const f = byId(id);
     state.files = state.files.filter((x) => x.id !== id);
     state.open = state.open.filter((x) => x !== id);
-    if (!state.files.length) state.files.push({ id: uid(), name: 'untitled.js', lang: 'javascript', code: '', updated: Date.now() });
-    if (id === state.current || !byId(state.current)) { state.current = state.open[0] || state.files[0].id; loadFile(); }
-    else renderTabs();
+    if (id === state.current) { state.current = state.open[0] || null; loadFile(); }
+    else { renderTabs(); if (!state.current) renderWelcome(); }
     save();
     if (!drawer.hidden) renderFiles();
     toast('Deleted ' + f.name);
@@ -2538,14 +2418,6 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     const fallback = () => { closeDrawer(); ta.focus(); ta.select(); toast('Code selected. Use your phone\'s Copy.'); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast('Copied ' + cur().name), fallback);
     else fallback();
-  }
-  function resetSamples() {
-    commit();
-    const fresh = seed().files;
-    state.files = fresh.concat(state.files.filter((f) => !fresh.some((s) => s.name === f.name)));
-    state.open = fresh.map((f) => f.id);
-    state.current = fresh[0].id;
-    loadFile(); save(); toast('Sample files restored');
   }
   function applyFont() {
     root.style.setProperty('--fs', state.fontSize + 'px');
@@ -2561,25 +2433,29 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   const palEl = $('#palette'), palIn = $('#palIn'), palList = $('#palList'), palHint = $('#palHint'), palScrim = $('#palScrim');
   const pal = { items: [], sel: 0, opts: null };
   const kbd = (s) => s ? s.split(' ').map((k) => '<kbd>' + esc(k) + '</kbd>').join('') : '';
+  // The last column marks commands that need an open editor; with none open they are left out.
   function commands() {
+    const open = !!cur();
     return [
-      ['Run Code', 'Ctrl+Enter', run],
-      ['Go to File…', 'Ctrl+P', () => openPalette('')],
-      ['Go to Line…', 'Ctrl+G', () => openPalette(':')],
-      ['Find', 'Ctrl+F', () => openFind(false)],
-      ['Replace', 'Ctrl+H', () => openFind(true)],
-      ['Format Document', 'Shift+Alt+F', formatDoc],
-      ['Toggle Line Comment', 'Ctrl+/', toggleComment],
-      ['Trigger Suggest', 'Ctrl+Space', () => { ta.focus(); updateSuggest(true, true); }],
-      ['Duplicate Line', 'Shift+Alt+↓', duplicate],
-      ['Move Line Up', 'Alt+↑', () => moveLine(-1)],
-      ['Move Line Down', 'Alt+↓', () => moveLine(1)],
-      ['Delete Line', 'Ctrl+Shift+K', deleteLine],
+      ['Run Code', 'Ctrl+Enter', run, 1],
       ['New File…', '', pickNewFile],
-      ['Rename File…', '', () => renameFile(false)],
-      ['Delete File', '', () => confirmDelete(state.current)],
-      ['Close Editor', '', () => closeTab(state.current)],
-      ['Change Language Mode', '', pickLanguage],
+      ['Open File…', '', () => openIn.click()],
+      ['Go to File…', 'Ctrl+P', () => openPalette('')],
+      ['Go to Line…', 'Ctrl+G', () => openPalette(':'), 1],
+      ['Find', 'Ctrl+F', () => openFind(false), 1],
+      ['Replace', 'Ctrl+H', () => openFind(true), 1],
+      ['Format Document', 'Shift+Alt+F', formatDoc, 1],
+      ['Toggle Line Comment', 'Ctrl+/', toggleComment, 1],
+      ['Trigger Suggest', 'Ctrl+Space', () => { ta.focus(); updateSuggest(true, true); }, 1],
+      ['Duplicate Line', 'Shift+Alt+↓', duplicate, 1],
+      ['Move Line Up', 'Alt+↑', () => moveLine(-1), 1],
+      ['Move Line Down', 'Alt+↓', () => moveLine(1), 1],
+      ['Delete Line', 'Ctrl+Shift+K', deleteLine, 1],
+      ['Rename File…', '', renameFile, 1],
+      ['Delete File', '', () => confirmDelete(state.current), 1],
+      ['Close Editor', '', () => closeTab(state.current), 1],
+      ['Close All Editors', '', closeAll, 1],
+      ['Change Language Mode', '', pickLanguage, 1],
       ['Change Indentation', '', pickIndent],
       ['Color Theme', '', pickTheme],
       ['Zoom In (larger text)', '', () => setFont(1)],
@@ -2589,9 +2465,8 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
       ['Open Settings', 'Ctrl+,', () => openDrawer('settings')],
       ['Toggle Terminal', 'Ctrl+`', () => togglePanel('terminal')],
       ['Show Problems', 'Ctrl+Shift+M', () => showPanel('problems')],
-      ['Copy File Contents', '', copyCode],
-      ['Restore Sample Files', '', resetSamples]
-    ].map(([label, key, fn]) => ({ label, det: kbd(key), run: fn }));
+      ['Copy File Contents', '', copyCode, 1]
+    ].filter((c) => open || !c[3]).map(([label, key, fn]) => ({ label, det: kbd(key), run: fn }));
   }
   function fuzzy(label, q) {
     if (!q) return { ok: true, html: esc(label), sc: 0 };
@@ -2609,6 +2484,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   function mainSource(text) {
     if (text.startsWith('>')) return { items: commands(), q: text.slice(1).trim(), hint: '' };
     if (text.startsWith(':')) {
+      if (!cur()) return { items: [], q: '', hint: 'Open a file to go to a line.' };
       const total = lineStarts().length, n = parseInt(text.slice(1), 10);
       if (n >= 1 && n <= total) return { items: [{ label: 'Go to line ' + n, det: '', run: () => goLine(n) }], q: '', hint: '' };
       return { items: [], q: '', hint: 'Type a line number between 1 and ' + total + '.' };
@@ -2638,8 +2514,11 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     if (src.q) ranked.sort((a, b) => b.f.sc - a.f.sc || a.i - b.i);
     pal.items = ranked.slice(0, 60);
     pal.sel = 0;
-    palHint.hidden = !src.hint;
-    palHint.textContent = src.hint;
+    // A name prompt checks what's typed as you type it, the way VS Code does.
+    const err = o.validate && palIn.value.trim() ? o.validate(palIn.value) : '';
+    palHint.classList.toggle('bad', !!err);
+    palHint.hidden = !(err || src.hint);
+    palHint.textContent = err || src.hint;
     palList.innerHTML = pal.items.map(({ it, f }, i) =>
       '<li class="pal-item" role="option" data-i="' + i + '" aria-selected="' + (i === 0) + '">' + (it.icon || '') +
         '<span class="lbl">' + f.html + '</span><span class="det">' + (it.det || '') + '</span></li>').join('') +
@@ -2655,7 +2534,12 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   }
   function palPick(i) {
     const o = pal.opts;
-    if (o && o.prompt) { const v = palIn.value; closePalette(); return o.onSubmit(v); }
+    if (o && o.prompt) {
+      const v = palIn.value, err = o.validate ? o.validate(v) : '';
+      if (err) { palHint.hidden = false; palHint.classList.add('bad'); palHint.textContent = err; return; }
+      closePalette();
+      return o.onSubmit(v);
+    }
     const x = pal.items[i];
     if (!x) return;
     closePalette();
@@ -2689,7 +2573,11 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     })));
   }
   function pickNewFile() {
-    pickList('Choose a language for the new file', Object.values(LANGS).map((L) => ({ label: L.label + ' file', icon: fileIcon(L.id), det: '.' + L.ext, run: () => newFile(L.id) })));
+    openPalette('', {
+      prompt: true, placeholder: 'File name, for example main.py',
+      hint: 'Type a name and press Enter. The extension sets the language: .js .py .html .css .c .cpp .java .txt',
+      validate: (v) => nameError(v), onSubmit: (v) => createFile(v)
+    });
   }
   function pickIndent() {
     pickList('Select tab size', [['auto', 'Auto (follow the language)'], ['2', '2 spaces'], ['4', '4 spaces']].map(([v, l]) => ({
@@ -2701,12 +2589,12 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
       label: l, det: state.theme === v ? 'current' : '', run: () => { state.theme = v; save(); renderSettings(); }
     })));
   }
-  function renameFile(fresh) {
+  function renameFile() {
     const f = cur(), dot = f.name.lastIndexOf('.');
     openPalette(f.name, {
       prompt: true, placeholder: 'File name', select: [0, dot > 0 ? dot : f.name.length],
-      hint: fresh ? 'Name the new file, then press Enter. The extension sets the language.' : 'Press Enter to rename. The extension sets the language.',
-      onSubmit: (v) => { setName(f, v); ta.focus(); }
+      hint: 'Press Enter to rename. The extension sets the language.',
+      validate: (v) => nameError(v, f), onSubmit: (v) => { setName(f, v); ta.focus(); }
     });
   }
   function confirmDelete(id) {
@@ -2728,23 +2616,29 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     ta.blur();
     showPane();
   }
+  // The activity bar marks the view whose side bar is showing, and nothing while the side bar is closed.
+  const activity = $('#activity');
+  function markActivity() {
+    activity.querySelectorAll('.act').forEach((b) => b.setAttribute('aria-selected', String(!drawer.hidden && b.dataset.pane === state.pane)));
+  }
   function showPane() {
     const p = state.pane;
-    drawer.querySelectorAll('.act').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.pane === p)));
+    markActivity();
     for (const k in PANE_TITLES) $('#pane-' + k).hidden = k !== p;
     $('#sideTitle').textContent = PANE_TITLES[p];
     if (p === 'explorer') renderFiles();
     if (p === 'settings') renderSettings();
     if (p === 'search') runSearch();
   }
-  function closeDrawer() { drawer.hidden = true; scrim.hidden = true; }
-  $('#menuBtn').addEventListener('click', () => openDrawer());
-  $('#drawerClose').addEventListener('click', closeDrawer);
+  function closeDrawer() { drawer.hidden = true; scrim.hidden = true; markActivity(); }
   scrim.addEventListener('click', closeDrawer);
-  drawer.querySelector('.activity').addEventListener('click', (e) => {
+  // Tapping a view opens its side bar; tapping it again closes the side bar.
+  activity.addEventListener('click', (e) => {
     const b = e.target.closest('[data-pane]');
     if (!b) return;
-    state.pane = b.dataset.pane; save(); showPane();
+    if (!drawer.hidden && state.pane === b.dataset.pane) return closeDrawer();
+    openDrawer(b.dataset.pane);
+    save();
     if (state.pane === 'search') $('#searchIn').focus();
   });
   const ago = (t) => {
@@ -2756,6 +2650,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   };
   function renderFiles() {
     const files = state.files.slice().sort((a, b) => a.name.localeCompare(b.name));
+    $('#filesEmpty').hidden = files.length > 0;
     $('#fileList').innerHTML = files.map((f) =>
       '<li class="file' + (f.id === state.current ? ' cur' : '') + '">' +
         '<button class="file-open" data-open="' + f.id + '">' + fileIcon(f.lang) + '<span class="file-name">' + esc(f.name) + '</span>' +
@@ -2768,7 +2663,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     const t = e.target.closest('button');
     if (!t) return;
     if (t.dataset.open) { openFile(t.dataset.open); return closeDrawer(); }
-    if (t.dataset.rename) { if (t.dataset.rename !== state.current) openFile(t.dataset.rename); closeDrawer(); return renameFile(false); }
+    if (t.dataset.rename) { if (t.dataset.rename !== state.current) openFile(t.dataset.rename); closeDrawer(); return renameFile(); }
     if (t.dataset.del) {
       if (!t.classList.contains('confirm')) {
         $('#fileList').querySelectorAll('.confirm').forEach((x) => { x.classList.remove('confirm'); x.innerHTML = svg('trash'); });
@@ -2778,7 +2673,59 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
       deleteFile(t.dataset.del);
     }
   });
-  $('#newFileBtn').addEventListener('click', () => { closeDrawer(); pickNewFile(); });
+  // New File in the Explorer works as in VS Code: a name box opens at the top of the tree and Enter creates the file.
+  // Escape, or leaving the box with nothing typed, creates nothing.
+  function explorerNewFile() {
+    const list = $('#fileList');
+    const open = list.querySelector('.new input');
+    if (open) return open.focus();
+    $('#filesEmpty').hidden = true;
+    list.insertAdjacentHTML('afterbegin', '<li class="file new">' + fileIcon('text') +
+      '<input aria-label="File name" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></li><li class="new-err" hidden></li>');
+    const row = list.firstElementChild, input = row.querySelector('input'), err = row.nextElementSibling;
+    let done = false;
+    const show = (msg) => { input.classList.toggle('bad', !!msg); err.hidden = !msg; err.textContent = msg; };
+    const finish = (create) => {
+      if (done) return;
+      done = true;
+      if (create) createFile(input.value);
+      else renderFiles();
+    };
+    input.addEventListener('input', () => {
+      row.firstElementChild.outerHTML = fileIcon(langOf(input.value.trim()));
+      show(input.value.trim() ? nameError(input.value) : '');
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); const msg = nameError(input.value); if (msg) show(msg); else finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener('blur', () => finish(!!input.value.trim() && !nameError(input.value)));
+    input.focus();
+  }
+  $('#newFileBtn').addEventListener('click', explorerNewFile);
+  $('#openFileBtn').addEventListener('click', () => openIn.click());
+  $('#filesEmpty').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (b) b.dataset.act === 'new' ? explorerNewFile() : openIn.click();
+  });
+
+  // ---------- Welcome page ----------
+  function renderWelcome() {
+    const recent = state.files.slice().sort((a, b) => b.updated - a.updated).slice(0, 5);
+    $('#wRecent').innerHTML = recent.length
+      ? recent.map((f) => '<li><button class="wlink" data-open="' + f.id + '">' + fileIcon(f.lang) + '<span class="w-name">' + esc(f.name) + '</span></button>' +
+          '<span class="w-det">' + esc(LANGS[f.lang].label) + ' · ' + ago(f.updated) + '</span></li>').join('') +
+        (state.files.length > recent.length ? '<li><button class="wlink" data-more><span>More…</span></button></li>' : '')
+      : '<li class="w-none">You have no files yet. Start with New File…</li>';
+  }
+  welcome.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.id === 'wNew') pickNewFile();
+    else if (b.id === 'wOpen') openIn.click();
+    else if (b.dataset.open) openFile(b.dataset.open);
+    else if ('more' in b.dataset) openPalette('');
+  });
 
   const searchIn = $('#searchIn');
   function runSearch() {
@@ -2839,7 +2786,6 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     else if (t.dataset.opt) {
       state[t.dataset.opt] = !state[t.dataset.opt]; save();
       if (t.dataset.opt === 'bracketColors') render();
-      if (t.dataset.opt === 'haptics' && state.haptics) haptic();
       scheduleDeco();
     } else if (t.id === 'fsDown') setFont(-1);
     else if (t.id === 'fsUp') setFont(1);
@@ -2863,7 +2809,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     root.style.setProperty('--vv-top', (vv ? vv.offsetTop : 0) + 'px');
     app.classList.toggle('compact', document.activeElement === ta && h < 560);
     app.classList.toggle('kb', !!vv && window.innerHeight - h > 120);
-    root.style.setProperty('--toast-b', (keybar.offsetHeight + $('#statusbar').offsetHeight + 8) + 'px');
+    root.style.setProperty('--toast-b', ($('#statusbar').offsetHeight + 8) + 'px');
     if (sg.box) placeSuggest();
   }
   if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
@@ -2932,7 +2878,8 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   loadFile();
   fit();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { charWKey = ''; syncScroll(); scheduleDeco(); });
-  if (imported) { save(); toast('Brought over ' + imported + (imported === 1 ? ' file' : ' files') + ' from the old code pad'); }
+  save();
+  if (imported) toast('Brought over ' + imported + (imported === 1 ? ' file' : ' files') + ' from the old code pad');
   // Installed app and offline use. The scope has no trailing slash so it covers the page at /code-pad itself.
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('/code-pad/sw.js', { scope: '/code-pad' }).catch(() => {});
 })();

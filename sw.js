@@ -1,6 +1,6 @@
 // Code Pad service worker. The app opens offline, and the libraries it downloads from CDNs
 // (the code font, the JavaScript parser, Python) are kept after the first download.
-const SHELL = 'codepad-shell-v2';
+const SHELL = 'codepad-shell-v3';
 const CDN = 'codepad-cdn-v1';
 // The app's address on every domain that serves it (gazimasud.com/code-pad, and this project's own).
 const APP = '/code-pad';
@@ -24,7 +24,10 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin === location.origin) {
     if (url.pathname.endsWith('/sw.js')) return;
-    e.respondWith(fresh(e, SHELL, req.mode === 'navigate' ? APP : null));
+    // Only the app's own page is stored as the app. Opening another file here directly (the manifest, an icon)
+    // must not replace the stored page with that file.
+    const page = req.mode === 'navigate' && (url.pathname === APP || url.pathname === APP + '/');
+    e.respondWith(fresh(e, SHELL, page ? APP : null));
   } else if (IMMUTABLE.some((p) => req.url.startsWith(p))) {
     e.respondWith(kept(req));
   } else if (url.origin === 'https://fonts.googleapis.com') {
