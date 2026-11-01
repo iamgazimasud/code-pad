@@ -12,7 +12,7 @@ It's one HTML file of vanilla JavaScript. No framework, no build step.
 - **Runs your code**:
   - **JavaScript** runs in a Web Worker, with output in the terminal.
   - **Python** runs for real with [Pyodide](https://pyodide.org) 0.26 (Python 3.12) in a Web Worker. Output streams as your program prints. The first run downloads Python (about 10 MB) and shows "Loading Python…"; after that it's cached and works offline.
-  - **HTML** renders in a sandboxed live preview.
+  - **HTML** renders in a sandboxed Preview that updates as you type. Stylesheets and scripts it links by file name (`<link rel="stylesheet" href="style.css">`, `<script src="script.js">`) load from your files, and editing them updates the page too. Running a linked CSS or JS file shows its page. The page's `console.log` output and errors appear in the Terminal, and a link to a file that doesn't exist gets a warning there.
   - Code that loops forever is stopped after 5 seconds.
 - **Pinch to zoom**: pinch the editor with two fingers to change the text size. The page itself never zooms.
 - **Installable app**: a web app manifest, icons (including a maskable one) and a service worker. Add it to your home screen and it opens full screen, even with no connection.

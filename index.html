@@ -1255,7 +1255,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     if (selStart != null) ta.setSelectionRange(selStart, selEnd == null ? selStart : selEnd);
     afterEdit();
   }
-  function afterEdit() { render(); saveSoon(); lintSoon(); if (find.open) runFind(true); }
+  function afterEdit() { render(); saveSoon(); lintSoon(); previewSoon(); if (find.open) runFind(true); }
   const lineStart = (v, p) => v.lastIndexOf('\n', p - 1) + 1;
   const lineEnd = (v, p) => { const i = v.indexOf('\n', p); return i < 0 ? v.length : i; };
   const leadWS = (s) => /^[ \t]*/.exec(s)[0];
@@ -1959,12 +1959,13 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   const panel = $('#panel'), con = $('#console'), frame = $('#preview');
   let panelTab = 'terminal';
   function showPanel(tab) {
-    const html = !!cur() && cur().lang === 'html';
-    if (tab === 'preview' && !html) tab = 'terminal';
+    const page = pageFor(cur());
+    if (tab === 'preview' && !page) tab = 'terminal';
+    if (!page) frame.srcdoc = '';
     panelTab = tab;
     panel.hidden = false;
     hideSuggest();
-    $('#ptabPreview').hidden = !html;
+    $('#ptabPreview').hidden = !page;
     panel.querySelectorAll('.ptab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.ptab === tab)));
     $('#problems').hidden = tab !== 'problems';
     con.hidden = tab !== 'terminal';
@@ -1972,14 +1973,107 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     $('#panelClear').hidden = tab !== 'terminal';
     if (tab === 'terminal' && !con.childNodes.length) termPrompt(true);
     if (tab === 'problems') renderProblems();
+    if (tab === 'preview') { previewId = page.id; renderPreview('show'); }
   }
   function hidePanel() { panel.hidden = true; frame.srcdoc = ''; }
   function togglePanel(tab) { if (!panel.hidden && panelTab === tab) hidePanel(); else showPanel(tab); }
   panel.querySelector('.ptabs').addEventListener('click', (e) => {
     const b = e.target.closest('[data-ptab]');
-    if (!b) return;
-    if (b.dataset.ptab === 'preview') { commit(); frame.srcdoc = ta.value; }
-    showPanel(b.dataset.ptab);
+    if (b) showPanel(b.dataset.ptab);
+  });
+
+  // ---------- Preview: an HTML page together with the files it links ----------
+  // The preview is a sealed srcdoc page, so a relative href or src would load from the website rather than from your
+  // files. Stylesheets and scripts that name a file here are written into the page instead, which is what opening the
+  // page from its folder does in VS Code. A deferred script moves to the end of the page, where it runs at the same
+  // point. The page's console and errors come back to the Terminal.
+  let previewId = null, previewT = 0, previewMissing = '', previewQuiet = false;
+  const ATTR = (name) => new RegExp('\\b' + name + '\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\'|([^\\s>]+))', 'i');
+  const HREF = ATTR('href'), SRC = ATTR('src');
+  const LINK_RE = /<link\b[^>]*>/gi, SCRIPT_RE = /<script\b([^>]*)>\s*<\/script\s*>/gi;
+  const liveCode = (f) => (f.id === state.current ? ta.value : f.code);
+  // "style.css" or "./style.css" names a file here; an address with a scheme, // or a leading / does not.
+  function localRef(m) {
+    const u = m ? (m[1] ?? m[2] ?? m[3] ?? '').trim() : '';
+    if (!u || /^(?:[a-z][\w+.-]*:|\/)/i.test(u)) return null;
+    try { return decodeURIComponent(u.replace(/^\.\//, '').replace(/[?#].*$/, '')); } catch (e) { return null; }
+  }
+  const isSheet = (tag) => /\brel\s*=\s*["']?stylesheet/i.test(tag);
+  function pageRefs(code) {
+    const refs = [];
+    for (const m of code.matchAll(LINK_RE)) if (isSheet(m[0])) refs.push(localRef(HREF.exec(m[0])));
+    for (const m of code.matchAll(SCRIPT_RE)) refs.push(localRef(SRC.exec(m[1])));
+    return refs.filter(Boolean);
+  }
+  // The page to preview for a file: the file itself if it's HTML, or a page that links this CSS or JS file.
+  function pageFor(f) {
+    if (!f) return null;
+    if (f.lang === 'html') return f;
+    if (f.lang !== 'css' && f.lang !== 'javascript') return null;
+    const uses = (p) => !!p && p.lang === 'html' && pageRefs(liveCode(p)).includes(f.name);
+    const last = byId(previewId);
+    return uses(last) ? last : state.files.find(uses) || null;
+  }
+  const BRIDGE = '<script>(() => {' +
+    'const show = (a) => typeof a === "string" ? a : (() => { try { return JSON.stringify(a); } catch (e) { return String(a); } })();' +
+    'const send = (kind, args) => { try { parent.postMessage({ codepadPreview: 1, kind, text: Array.from(args, show).join(" ") }, "*"); } catch (e) {} };' +
+    'for (const k of ["log", "info", "warn", "error"]) { const o = console[k]; console[k] = function () { send(k === "info" ? "log" : k, arguments); return o.apply(console, arguments); }; }' +
+    'addEventListener("error", (e) => send("error", [e.message || "Error"]));' +
+    'addEventListener("unhandledrejection", (e) => send("error", ["Uncaught (in promise) " + show(e.reason)]));' +
+    '})();<\/script>';
+  function pageHTML(page) {
+    const missing = [], late = [];
+    const inline = (ref, wrap) => {
+      const f = state.files.find((x) => x.name === ref);
+      if (!f) { missing.push(ref); return null; }
+      return wrap(liveCode(f));
+    };
+    let html = liveCode(page).replace(LINK_RE, (tag) => {
+      const ref = isSheet(tag) && localRef(HREF.exec(tag));
+      if (!ref) return tag;
+      const out = inline(ref, (c) => '<style>\n' + c.replace(/<\/style/gi, '<\\/style') + '\n</style>');
+      return out == null ? tag : out;
+    }).replace(SCRIPT_RE, (tag, attrs) => {
+      const m = SRC.exec(attrs), ref = localRef(m);
+      if (!ref) return tag;
+      const rest = attrs.replace(m[0], '');
+      const out = inline(ref, (c) => '<script' + rest.replace(/\b(?:defer|async)\b/gi, '') + '>\n' + c.replace(/<\/script/gi, '<\\/script') + '\n<\/script>');
+      if (out == null) return tag;
+      if (/\b(?:defer|async)\b/i.test(rest) && !/type\s*=\s*["']?module/i.test(rest)) { late.push(out); return ''; }
+      return out;
+    });
+    html += late.join('\n');
+    // After the doctype, if there is one: anything before it would put the page in quirks mode.
+    const dt = /^\s*<!doctype[^>]*>/i.exec(html);
+    html = dt ? dt[0] + BRIDGE + html.slice(dt[0].length) : BRIDGE + html;
+    return { html, missing };
+  }
+  // `how` is "run" (reload, and say what's missing), "show" (say what's missing), or nothing for a quiet update while
+  // you type, which mustn't complain about a file name you haven't finished typing.
+  function renderPreview(how) {
+    const page = byId(previewId);
+    if (!page) return;
+    const { html, missing } = pageHTML(page);
+    const key = page.id + '|' + missing.join('|');
+    previewQuiet = !how;
+    if (how && missing.length && key !== previewMissing) {
+      logLine('warn', page.name + ' links ' + missing.join(', ') + ', but there is no file with ' + (missing.length === 1 ? 'that name' : 'those names') + '. File names must match exactly.');
+      toast('A file linked from ' + page.name + ' is missing. See Terminal.');
+    }
+    if (how) previewMissing = key;
+    if (how === 'run' || frame.srcdoc !== html) frame.srcdoc = html;
+  }
+  // The preview keeps up with your typing, in the page or in any file it links.
+  function previewSoon() {
+    if (panel.hidden || panelTab !== 'preview') return;
+    clearTimeout(previewT);
+    previewT = setTimeout(() => { if (!panel.hidden && panelTab === 'preview') { commit(); renderPreview(); } }, 500);
+  }
+  addEventListener('message', (e) => {
+    const d = e.data;
+    if (e.source !== frame.contentWindow || !d || d.codepadPreview !== 1) return;
+    logLine(d.kind === 'warn' || d.kind === 'error' ? d.kind : 'log', String(d.text).slice(0, 4000));
+    if (d.kind === 'error' && !previewQuiet) toast('The page has an error. See Terminal.');
   });
   $('#panelClose').addEventListener('click', hidePanel);
   $('#panelClear').addEventListener('click', () => { con.textContent = ''; termPrompt(true); });
@@ -2265,14 +2359,22 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     clearTimeout(killT);
     if (py.busy && py.ready) pyStop();
     const f = cur(), L = LANGS[f.lang];
-    if (f.lang === 'html') { frame.srcdoc = ta.value; showPanel('preview'); return; }
+    // HTML opens in the Preview, and so does the page behind a CSS or JS file it links.
+    const page = pageFor(f);
+    if (page) {
+      previewId = page.id;
+      previewMissing = '';
+      termPrompt(false, 'open ' + page.name);
+      renderPreview('run');
+      return showPanel('preview');
+    }
     showPanel('terminal');
     if (f.lang === 'javascript') { termPrompt(false, 'node ' + f.name); return runJS(ta.value); }
     if (f.lang === 'python') { termPrompt(false, 'python ' + f.name); return runPy(ta.value, f.name); }
     const base = f.name.replace(/\.[^.]+$/, '');
     const cmd = { python: 'python ' + f.name, c: 'gcc ' + f.name + ' -o ' + base + ' && ./' + base, cpp: 'g++ ' + f.name + ' -o ' + base + ' && ./' + base, java: 'java ' + f.name }[f.lang];
     termPrompt(false, cmd || 'cat ' + f.name);
-    if (f.lang === 'css') logLine('meta', 'CSS has nothing to run on its own. Put it in a <style> tag inside an HTML file, then run that file to see it.');
+    if (f.lang === 'css') logLine('meta', 'CSS has nothing to run on its own. Link it from an HTML file with <link rel="stylesheet" href="' + f.name + '">, then run either file to see it.');
     else if (f.lang === 'text') logLine('meta', 'Plain text files have nothing to run.');
     else logLine('meta', 'This editor runs JavaScript, Python and HTML. ' + L.label + ' files get suggestions, highlighting and error checks, but the browser cannot execute them. ' +
       (diags.length ? 'Fix the ' + diags.length + (diags.length === 1 ? ' problem' : ' problems') + ' listed under Problems first.' : 'No problems were found in this file.'));
@@ -2341,7 +2443,6 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     ta.scrollLeft = 0;
     syncScroll();
     if (at != null) reveal(at);
-    frame.srcdoc = '';
     if (!panel.hidden) showPanel(panelTab);
     if (find.open) runFind(true);
     lint();
