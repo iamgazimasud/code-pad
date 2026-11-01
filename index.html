@@ -437,6 +437,24 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
 .pal-item .det { margin-left: auto; padding-left: 10px; color: var(--muted); font-size: 12px; white-space: nowrap; display: flex; gap: 3px; }
 @media (pointer: coarse) { .pal-item { min-height: 38px; } }
 
+/* The "use it as an app" dialog */
+.sheet-scrim { position: fixed; inset: 0; z-index: 32; background: var(--scrim); }
+.sheet {
+  position: fixed; z-index: 33; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(400px, calc(100vw - 32px));
+  max-height: calc(100% - 32px); overflow-y: auto; padding: 18px 18px 14px;
+  background: var(--widget); border: 1px solid var(--widget-border); border-radius: 6px; box-shadow: 0 8px 28px var(--shadow);
+  font-size: 13.5px; line-height: 1.5;
+}
+.sheet h2 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+.sheet p { margin: 0 0 12px; color: var(--muted); }
+.sheet ol { margin: 0 0 12px; padding-left: 22px; }
+.sheet li { margin: 5px 0; }
+.sheet li svg { display: inline-block; width: 17px; height: 17px; vertical-align: -3px; color: var(--link); }
+.sheet-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.sheet-btns button { height: 32px; padding: 0 16px; border-radius: 2px; font-size: 13px; }
+.btn-primary { border: 0; background: var(--accent); color: var(--accent-fg); }
+.btn-secondary { border: 1px solid var(--input-border); background: var(--input); }
+
 /* Notifications */
 .toast {
   position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); bottom: var(--toast-b, 34px); z-index: 40;
@@ -452,6 +470,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   <header class="titlebar">
     <span class="app-icon"><img src="/code-pad/icons/icon.svg" alt=""></span>
     <button class="cmd-center" id="cmdCenter" aria-label="Search files and commands" data-icon="search"><span>code-pad</span></button>
+    <button class="ibtn" id="fsBtn" aria-label="Full Screen" data-icon="fs"></button>
     <button class="ibtn" id="layoutBtn" aria-label="Toggle panel" data-icon="panel"></button>
   </header>
 
@@ -482,6 +501,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
         <ul class="w-list">
           <li><button class="wlink" id="wNew"><span data-icon="newFile"></span><span>New File…</span></button></li>
           <li><button class="wlink" id="wOpen"><span data-icon="folder"></span><span>Open File…</span></button></li>
+          <li id="wFullItem"><button class="wlink" id="wFull"><span data-icon="fs"></span><span id="wFullText">Full Screen</span></button></li>
         </ul>
         <h2 class="w-head">Recent</h2>
         <ul class="w-list" id="wRecent"></ul>
@@ -602,6 +622,18 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   <ul class="pal-list" id="palList" role="listbox"></ul>
 </div>
 
+<div class="sheet-scrim" id="appScrim" hidden></div>
+<div class="sheet" id="appSheet" hidden role="dialog" aria-modal="true" aria-labelledby="appSheetTitle">
+  <h2 id="appSheetTitle">Use Code Pad as an app</h2>
+  <p>Add Code Pad to your home screen. It then opens full screen, with no address bar, like any other app.</p>
+  <ol id="appSteps"></ol>
+  <p id="appNote" hidden></p>
+  <div class="sheet-btns">
+    <button class="btn-secondary" id="appSheetClose">Close</button>
+    <button class="btn-primary" id="installBtn" hidden>Install App</button>
+  </div>
+</div>
+
 <div class="toast" id="toast" hidden role="status"><span data-icon="info"></span><span id="toastText"></span></div>
 
 <script>
@@ -628,6 +660,9 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     files: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/>',
     newFile: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/>',
+    fs: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+    fsExit: '<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>',
+    share: '<path d="M12 3v12M8 7l4-4 4 4"/><path d="M7 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-1"/>',
     folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     trash: '<path d="M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
     pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
@@ -853,7 +888,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   function seed() {
     return {
       files: [], current: null, open: [], fontSize: 15, indent: 'auto', theme: 'system', pane: 'explorer',
-      autoClose: true, suggest: true, ghost: false, bracketColors: true, lens: true
+      autoClose: true, suggest: true, ghost: false, bracketColors: true, lens: true, fullscreen: false
     };
   }
   // Earlier versions put three sample files into every new workspace. Copies nobody edited are removed once.
@@ -2559,6 +2594,8 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
       ['Change Language Mode', '', pickLanguage, 1],
       ['Change Indentation', '', pickIndent],
       ['Color Theme', '', pickTheme],
+      ...(installed && !canFs ? [] : [[canFs ? 'Toggle Full Screen' : 'Use as an App…', '', toggleFullScreen]]),
+      ...(installed ? [] : [['Install App…', '', openAppSheet]]),
       ['Zoom In (larger text)', '', () => setFont(1)],
       ['Zoom Out (smaller text)', '', () => setFont(-1)],
       ['Show Explorer', 'Ctrl+B', () => openDrawer('explorer')],
@@ -2902,6 +2939,78 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
     toastT = setTimeout(() => { t.hidden = true; }, 2200);
   }
 
+  // ---------- Full screen, and Code Pad as an installed app ----------
+  // Full screen hides the browser's address bar for this visit, on Android, iPad and computers. iPhone browsers only
+  // allow it for video, so there the way to lose the address bar is the installed app: Add to Home Screen opens Code Pad
+  // on its own, with no browser around it.
+  const fsBtn = $('#fsBtn'), appSheet = $('#appSheet'), appScrim = $('#appScrim');
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const canFs = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  const installed = navigator.standalone === true || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
+  const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  let installEvt = null;
+  addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; });
+  addEventListener('appinstalled', () => { installEvt = null; closeAppSheet(); toast('Code Pad is on your home screen'); });
+  function enterFs(fromButton) {
+    try {
+      const req = root.requestFullscreen ? root.requestFullscreen({ navigationUI: 'hide' }) : root.webkitRequestFullscreen && root.webkitRequestFullscreen();
+      if (req && req.catch) req.catch(() => {});
+    } catch (e) {}
+    // A refused request, or one that never answers (some in-app browsers), leaves you with the other way in.
+    if (fromButton) setTimeout(() => { if (!fsEl()) openAppSheet(); }, 1500);
+  }
+  function toggleFullScreen() {
+    if (fsEl()) return (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    if (!canFs) return openAppSheet();
+    enterFs(true);
+  }
+  // Called at start-up to draw the button, and by the browser whenever full screen starts or ends.
+  function syncFs(e) {
+    const on = !!fsEl();
+    fsBtn.innerHTML = svg(on ? 'fsExit' : 'fs');
+    fsBtn.setAttribute('aria-label', on ? 'Exit Full Screen' : canFs ? 'Full Screen' : 'Use as an app');
+    $('#wFullText').textContent = on ? 'Exit Full Screen' : canFs ? 'Full Screen' : 'Use as an App…';
+    // Leaving full screen while the page is still open means you chose to; closing the page doesn't count.
+    if (e && !document.hidden && state.fullscreen !== on) { state.fullscreen = on; save(); }
+  }
+  document.addEventListener('fullscreenchange', syncFs);
+  document.addEventListener('webkitfullscreenchange', syncFs);
+  fsBtn.addEventListener('click', toggleFullScreen);
+  $('#wFull').addEventListener('click', toggleFullScreen);
+  // An iPhone app on the home screen already has no address bar, and nothing more to offer.
+  fsBtn.hidden = $('#wFullItem').hidden = installed && !canFs;
+  // Full screen ends with the visit, and browsers only grant it in answer to a tap. If you left it on, the first tap
+  // of the next visit puts it back.
+  if (state.fullscreen && canFs) {
+    document.addEventListener('click', (e) => { if (!fsEl() && !e.target.closest('#fsBtn, #wFull')) enterFs(false); }, { capture: true, once: true });
+  }
+
+  function openAppSheet() {
+    hideSuggest();
+    const steps = $('#appSteps'), note = $('#appNote');
+    $('#installBtn').hidden = !installEvt;
+    steps.hidden = !!installEvt;
+    steps.innerHTML = IOS
+      ? '<li>Tap Share ' + svg('share') + ' in your browser. In Safari it can be inside the <b>···</b> menu.</li>' +
+        '<li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open Code Pad from your home screen.</li>'
+      : '<li>Open your browser\'s menu <b>⋮</b>.</li><li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li><li>Open Code Pad from your home screen.</li>';
+    // iPhone keeps a home screen app's saved data apart from Safari's.
+    note.hidden = !IOS;
+    note.textContent = 'On iPhone the home screen app keeps its own files, separate from the ones in your browser. Copy any code you want to keep across first.';
+    appSheet.hidden = appScrim.hidden = false;
+    $(installEvt ? '#installBtn' : '#appSheetClose').focus();
+  }
+  function closeAppSheet() { appSheet.hidden = appScrim.hidden = true; }
+  $('#appSheetClose').addEventListener('click', closeAppSheet);
+  appScrim.addEventListener('click', closeAppSheet);
+  appSheet.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAppSheet(); });
+  $('#installBtn').addEventListener('click', () => {
+    const e = installEvt;
+    installEvt = null;
+    closeAppSheet();
+    if (e) e.prompt();
+  });
+
   // ---------- Fit above the on-screen keyboard ----------
   const vv = window.visualViewport;
   function fit() {
@@ -2976,6 +3085,7 @@ kbd { font: 11px var(--font-ui); padding: 1px 5px; border: 1px solid var(--widge
   document.querySelectorAll('[data-icon]').forEach((el) => el.insertAdjacentHTML('afterbegin', svg(el.dataset.icon)));
   applyFont();
   renderSettings();
+  syncFs();
   loadFile();
   fit();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { charWKey = ''; syncScroll(); scheduleDeco(); });
